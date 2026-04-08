@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Station Report - {{ station.name }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .header .subtitle {
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .station-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .info-item {
+            margin-bottom: 10px;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .charging-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .charging-table th {
+            background: #28a745;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .charging-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 11px;
+        }
+        
+        .charging-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .status-badge {
+            padding: 3px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-completed { background: #d4edda; color: #155724; }
+        .status-charging { background: #fff3cd; color: #856404; }
+        .status-waiting { background: #cce7ff; color: #004085; }
+        .status-cancelled { background: #f8d7da; color: #721c24; }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 10px;
+            border-top: 1px solid #eee;
+            margin-top: 30px;
+        }
+        
+        .amount {
+            font-weight: bold;
+            color: #28a745;
+        }
+        
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #28a745;
+        }
+        
+        .stat-number {
+            font-size: 20px;
+            font-weight: bold;
+            color: #28a745;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Station Activity Report</h1>
+        <div class="subtitle">{{ station.name }} - {{ station.area }}, {{ station.city }}</div>
+        <div class="subtitle">Generated on {{ "now"|date:"F d, Y H:i" }}</div>
+    </div>
+
+    <div class="station-info">
+        <div>
+            <div class="info-item">
+                <span class="info-label">Station Name:</span> {{ station.name }}
+            </div>
+            <div class="info-item">
+                <span class="info-label">Type:</span> {{ station.stype }}
+            </div>
+            <div class="info-item">
+                <span class="info-label">Total Chargers:</span> {{ station.numcharger }}
+            </div>
+        </div>
+        <div>
+            <div class="info-item">
+                <span class="info-label">Location:</span> {{ station.area }}, {{ station.city }}
+            </div>
+            <div class="info-item">
+                <span class="info-label">Landmark:</span> {{ station.landmark }}
+            </div>
+            <div class="info-item">
+                <span class="info-label">Contact:</span> {{ station.mobile }}
+            </div>
+        </div>
+    </div>
+
+    <div class="summary-stats">
+        <div class="stat-card">
+            <span class="stat-number">{{ history|length }}</span>
+            <span class="stat-label">Total Sessions</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ history|length|floatformat:0 }}</span>
+            <span class="stat-label">Active Bookings</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">₹{% for h in history %}{{ h.amount|add:0 }}{% empty %}0{% endfor %}</span>
+            <span class="stat-label">Total Revenue</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ station.numcharger }}</span>
+            <span class="stat-label">Available Slots</span>
+        </div>
+    </div>
+
+    <table class="charging-table">
+        <thead>
+            <tr>
+                <th>S.No</th>
+                <th>User</th>
+                <th>Slot</th>
+                <th>Date</th>
+                <th>Time In</th>
+                <th>Time Out</th>
+                <th>Amount</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in history %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ row.user }}</td>
+                <td>{{ row.slot_no }}</td>
+                <td>{{ row.start_date }}</td>
+                <td>{{ row.in_time }}</td>
+                <td>{{ row.out_time }}</td>
+                <td class="amount">₹{{ row.amount }}</td>
+                <td>
+                    {% if row.status == 3 %}
+                        <span class="status-badge status-completed">Completed</span>
+                    {% elif row.status == 2 %}
+                        <span class="status-badge status-charging">Charging</span>
+                    {% elif row.status == 1 %}
+                        <span class="status-badge status-waiting">Waiting</span>
+                    {% else %}
+                        <span class="status-badge status-cancelled">Cancelled</span>
+                    {% endif %}
+                    
+                    {% if row.pay_status == 2 %}
+                        <br><small style="color: #28a745;">✓ Paid</small>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 20px; color: #666;">
+                    No charging sessions found
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <p><strong>EV Charge Hub</strong> • Station Management System</p>
+        <p>Report generated on {{ "now"|date:"Y-m-d H:i:s" }} • Station: {{ station.name }}</p>
+    </div>
+</body>
+</html>

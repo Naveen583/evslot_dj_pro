@@ -1,0 +1,1470 @@
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse , HttpResponse
+from django.core.mail import send_mail
+from django.conf import settings
+from django.views.decorators.http import require_POST , require_http_methods
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib import messages
+from django.utils import timezone
+import math
+from datetime import datetime, date , timedelta , timedelta
+from random import randint
+# from django.db import transaction
+import urllib.parse
+from django.utils.timezone import localtime
+import requests
+from django.urls import reverse # Added for reverse URL lookups
+from django.template.loader import render_to_string
+
+# PDF generation imports
+try:
+    from weasyprint import HTML
+    WEASYPRINT_AVAILABLE = True
+except (ImportError, OSError):
+    WEASYPRINT_AVAILABLE = False
+    try:
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import letter, A4
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib import colors
+        from reportlab.lib.units import inch
+        REPORTLAB_AVAILABLE = True
+    except ImportError:
+        REPORTLAB_AVAILABLE = False
+
+# from django.contrib.auth import authenticate, login, logout
+# from django.contrib.auth.decorators import login_required
+from .models import (
+    EVAdmin,
+    EVRegister,
+    EVStation,
+    EVBooking
+)
+
+
+
+def index(request):
+    stations = EVStation.objects.filter(status=1)
+    messages.success(request, """<h3>Welcome to EV Charge Hub!</h3><span>&nbsp;&nbsp;&nbsp;</span>
+                     Your trusted partner for EV charging solutions.""")
+    return render(request, 'index.html', {'stations': stations})
+
+
+# --- Admin Views --- #
+
+def admin_login(request):
+    if request.method == 'POST':
+        uname = request.POST.get('uname')
+        pwd = request.POST.get('password')
+        admin = EVAdmin.objects.filter(username=uname, password=pwd).first()
+        if admin:
+            request.session['admin'] = uname
+            messages.success(request, "Login successful!")
+            return redirect('admin_dashboard')
+        else:
+            messages.error(request, "Invalid admin credentials.")
+    return render(request, 'login_admin.html')
+
+
+def admin_dashboard(request):
+    if not request.session.get('admin'):
+        messages.error(request, "Invalid admin credentials. please login")
+        return redirect('admin_login')
+
+    approve_station = request.GET.get('approve')
+    if approve_station:
+        station = EVStation.objects.filter(uname=approve_station).first()
+        if station:
+            station.status = 1  # Set approved status
+            station.save()
+            messages.success(request, f'Station "{approve_station}" approved successfully.')
+
+    stations = EVStation.objects.all()
+    users = EVRegister.objects.all()
+    bookings = EVBooking.objects.all()
+
+    return render(request, 'admin.html', {
+        'stations': stations,
+        'users': users,
+        'bookings': bookings,
+    })
+
+
+
+def admin_logout(request):
+    request.session.flush()
+    messages.success(request, "You have been logged out.")
+    return redirect('admin_login')
+
+
+# --- Station Owner Views --- #
+
+def station_login(request):
+    if request.method == 'POST':
+        uname = request.POST.get('uname')
+        pwd = request.POST.get('pass')
+        # station = authenticate(request, username=uname, password=pwd)
+        # if station is not None and isinstance(station, EVStation):
+        #     request.session['station_uname'] = station.uname
+        #     return redirect('station_home')
+        owner = EVStation.objects.filter(uname=uname, passw=pwd).first()
+        if owner and owner.status == 1:
+            request.session['station_owner'] = uname
+            owner.is_active = True
+            owner.last_seen = timezone.now()
+            owner.save(update_fields=['is_active', 'last_seen'])
+            messages.success(request, "Login successful!")
+            return redirect('station_home')
+        else:
+            messages.error(request, "Invalid station credentials or not approved yet.")
+    return render(request, 'login2.html')
+
+
+def station_register(request):
+    if request.method == 'POST':
+        sname = request.POST.get('sname')
+        stype = request.POST.get('stype')
+        numcharger = request.POST.get('num_charger')
+        mobile = request.POST.get('mobile')
+        email = request.POST.get('email')
+        area = request.POST.get('area')
+        city = request.POST.get('city')
+        landmark = request.POST.get('landmark')
+        lat = request.POST.get('lat')
+        lon = request.POST.get('lon')
+        uname = request.POST.get('uname')
+        passw = request.POST.get('pass')
+        if EVStation.objects.filter(uname=uname).exists():
+            messages.error(request, "Username already exists")
+            return redirect('station_register')
+
+        station = EVStation(
+            name=sname,
+            stype = stype,
+            numcharger=numcharger,
+            mobile = mobile,
+            email = email,
+            area = area,
+            city = city,
+            landmark = landmark,
+            lat = lat,
+            lon = lon,
+            uname=uname,
+            passw=passw,
+            status=0,  # Not approved yet
+            # add other required fields here from request.POST
+        )
+        station.save()
+        messages.success(request, "Station registered! Waiting for admin approval.")
+        return redirect('station_login')
+    return render(request, 'reg_station.html')
+
+
+def station_home(request):
+    if not request.session.get('station_owner'):
+        messages.error(request, "Invalid station credentials. please login")
+        return redirect('station_login')
+    
+    uname = request.session['station_owner']
+    station = get_object_or_404(EVStation, uname=uname)
+    bookings = EVBooking.objects.filter(station=station, status=1)
+    return render(request, 'home.html', {'station': station, 'bookings': bookings})
+
+def get_slot_data(station):
+    now = localtime()
+    rdate = now.strftime("%Y-%m-%d")
+
+    sdata = []
+    num = station.numcharger
+
+    for i in range(1, num + 1):
+        # NOTE: station field is FK now, so use station=station NOT station=station.name
+        booking = EVBooking.objects.filter(
+            slot=i,
+            station=station,
+            status=1,
+            rdate=rdate,
+        ).first()
+
+        if booking:
+            sdata.append({
+                'slot_flag': 'yes',
+                'slot_num': i,
+                'booking': booking,
+            })
+        else:
+            sdata.append({
+                'slot_flag': 'no',
+                'slot_num': i,
+                'booking': None,
+            })
+
+    return sdata
+
+def station_view_slots(request, sid):
+    if not request.session.get('station_owner'):
+        messages.error(request, "Invalid station credentials. please login")
+        return redirect('station_login')
+    
+    # Handle payment action
+    if request.GET.get('act') == 'pay':
+        rid = request.GET.get('rid')
+        if rid:
+            try:
+                booking = EVBooking.objects.get(id=rid)
+                booking.payst = 1  # Mark as paid
+                booking.status = 3   # Mark as completed/paid status
+                booking.save()
+                messages.success(request, f"Payment for Slot.no : {booking.slot} booking ID {rid} has been marked as received.")
+            except EVBooking.DoesNotExist:
+                messages.error(request, f"Booking with Slot.no : {booking.slot} booking ID {rid} not found.")
+            # Redirect to the same page without query parameters to avoid re-execution
+            return redirect('station_view', sid=sid)
+
+    station = get_object_or_404(EVStation, uname=sid)
+
+    # ADDED LOGIC: If the logged-in owner is viewing their own station, ensure it's marked active.
+    if request.session.get('station_owner') == station.uname:
+        if not station.is_active:
+            station.is_active = True
+            station.save(update_fields=['is_active'])
+
+    slots = get_slot_data(station)
+
+    return render(request, 'view.html', {'station': station, 'slots': slots})
+
+
+def start_charge(request, rid, sid):
+    if not request.session.get('station_owner'):
+        messages.error(request, "Invalid station credentials. please login")
+        return redirect('station_login')
+
+    booking = get_object_or_404(EVBooking, id=rid)
+    station = get_object_or_404(EVStation, uname=sid)
+
+    if booking.station != station:
+        messages.error(request, "Booking does not belong to this station.")
+        return redirect('station_view', sid=sid)
+
+    if request.method in ['GET', 'POST']:
+        # Start charging state, initialise timer
+        booking.chargest = 2  # charging
+
+        # default duration if not set
+        if booking.mins <= 0:
+            booking.mins = 30
+
+        # total duration in seconds for this charge
+        booking.duration_seconds = booking.mins * 60
+
+        # set a fixed end time based on server time
+        booking.end_time = timezone.now() + timedelta(seconds=booking.duration_seconds)
+
+        # # keep old fields if you still use them anywhere else (optional)
+        # booking.chargemin = booking.mins
+        # booking.chargesec = 0
+
+        booking.save(update_fields=[
+            'chargest',
+            'mins',
+            'duration_seconds',
+            'end_time',
+            # 'chargemin',
+            # 'chargesec',
+        ])
+
+    # Redirect back to booking detail or slots
+    return redirect('station_view', sid=sid)
+
+@require_POST
+def finish_charge(request, rid):
+    booking = get_object_or_404(EVBooking, id=rid)
+    booking.chargest = 3
+    booking.save(update_fields=['chargest'])
+    return HttpResponse("ok")
+
+def station_report(request):
+    if not request.session.get('station_owner'):
+        messages.error(request, "Invalid station credentials. please login")
+        return redirect('station_login')
+    
+    uname = request.session['station_owner']
+    station = get_object_or_404(EVStation, uname=uname)
+
+    # Ensure the station is marked active when the owner views the report.
+    if not station.is_active:
+        station.is_active = True
+        station.save(update_fields=['is_active'])
+
+    # Get all bookings for this station
+    bookings = EVBooking.objects.filter(station=station).order_by('-rdate', '-rtime')
+
+    # Prepare data for the template
+    history = []
+    for b in bookings:
+        history.append({
+            'user': b.uname.name,  # Get the user's name from the related EVRegister object
+            'slot_no': b.slot,
+            'in_time': b.btime1,
+            'out_time': b.btime2,
+            'start_date': b.rdate,
+            # 'end_date': b.end_time.date() if b.end_time else '',
+            'end_date': b.rdate,
+            'status': b.chargest,
+            'pay_status': b.payst,
+            'amount': b.amount,
+        })
+
+    return render(request, 'report.html', {'history': history, 'station': station})
+
+
+def station_logout(request):
+    if 'station_owner' in request.session:
+        uname = request.session['station_owner']
+        try:
+            station = EVStation.objects.get(uname=uname)
+            station.is_active = False
+            station.save()
+            del request.session['station_owner']
+        except EVStation.DoesNotExist:
+            pass
+    messages.success(request, "You have been logged out.")
+    return redirect('station_login')
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def update_station_status(request):
+    if 'station_owner' in request.session:
+        uname = request.session['station_owner']
+        try:
+            station = EVStation.objects.get(uname=uname)
+            station.is_active = False
+            station.save(update_fields=['is_active'])
+        except EVStation.DoesNotExist:
+            # This could happen if the station was deleted but the session persists.
+            pass
+    # Return a 204 No Content response as is standard for beacon requests.
+    return HttpResponse(status=204)
+
+
+
+def user_login(request):
+    if request.method == 'POST':
+        uname = request.POST.get('uname')
+        pwd = request.POST.get('pass')
+        user = EVRegister.objects.filter(uname=uname, passw=pwd).first()
+        if user:
+            request.session['user'] = uname
+            messages.success(request, "Login successful!")
+            return redirect('user_home')
+        else:
+            messages.error(request, "Invalid credentials.")
+    return render(request, 'login.html')
+
+
+def user_register(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        address = request.POST.get('address')
+        mobile = request.POST.get('mobile')
+        email = request.POST.get('email')
+        bank = request.POST.get('bank', '')
+        account = request.POST.get('account', '')
+        card = request.POST.get('card', '')
+        uname = request.POST.get('uname')
+        passw = request.POST.get('pass')
+        latitude = request.POST.get('latitude', '')
+        longitude = request.POST.get('longitude', '')
+
+        # Check for any fields left empty (optional, but helps avoid errors)
+        if not all([name, address, mobile, email, uname, passw]):
+            messages.error(request, "All fields are required!")
+            return render(request, 'register.html')
+
+        # Username unique check
+        if EVRegister.objects.filter(uname=uname).exists():
+            messages.error(request, "Username already exists. Try another.")
+            return render(request, 'register.html')
+
+        # Save user
+        user = EVRegister(
+            uname=uname,
+            passw=passw,
+            name=name,
+            address=address,
+            mobile=mobile,
+            email=email,
+            bank=bank,
+            account=account,
+            card=card,
+            latitude=latitude,
+            longitude=longitude,
+        )
+        user.save()
+
+        # Send confirmation email
+        try:
+            html_message = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to EV Charge Hub</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0a0e1a;font-family:'Segoe UI',Arial,sans-serif;">
+
+  <!-- Wrapper -->
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0e1a;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="620" cellpadding="0" cellspacing="0" style="background-color:#0d1117;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,150,255,0.2);">
+
+          <!-- TOP GLOW BAR -->
+          <tr>
+            <td style="background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7,#00c6ff);height:5px;"></td>
+          </tr>
+
+          <!-- HERO SECTION -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#0d1117 0%,#0a1628 50%,#0d1117 100%);padding:50px 40px 30px;text-align:center;">
+              <div style="display:inline-block;background:linear-gradient(135deg,#00c6ff,#0072ff);border-radius:50%;width:80px;height:80px;line-height:80px;font-size:38px;margin-bottom:20px;">⚡</div>
+              <h1 style="margin:0;font-size:32px;font-weight:800;background:linear-gradient(90deg,#00c6ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:1px;">EV CHARGE HUB</h1>
+              <p style="color:#4a9eff;font-size:13px;letter-spacing:4px;margin:6px 0 0;text-transform:uppercase;">Smart Charging · Smarter Living</p>
+            </td>
+          </tr>
+
+          <!-- WELCOME BANNER -->
+          <tr>
+            <td style="padding:0 40px;">
+              <div style="background:linear-gradient(135deg,#0072ff15,#7b2ff715);border:1px solid #0072ff40;border-radius:16px;padding:30px;text-align:center;">
+                <p style="color:#4a9eff;font-size:13px;letter-spacing:3px;text-transform:uppercase;margin:0 0 10px;">Registration Successful</p>
+                <h2 style="color:#ffffff;font-size:26px;margin:0 0 12px;font-weight:700;">Welcome, {name}! 🎉</h2>
+                <p style="color:#8892a4;font-size:15px;line-height:1.7;margin:0;">You've successfully joined the future of electric vehicle charging. Your account is ready and waiting for you to explore!</p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- ACCOUNT DETAILS -->
+          <tr>
+            <td style="padding:30px 40px 10px;">
+              <p style="color:#4a9eff;font-size:12px;letter-spacing:3px;text-transform:uppercase;margin:0 0 15px;">Your Account Details</p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:4px 0;">
+                    <table width="100%" cellpadding="12" cellspacing="0" style="background:#131920;border-radius:10px;border:1px solid #1e2d40;">
+                      <tr>
+                        <td width="40" style="font-size:20px;">👤</td>
+                        <td style="color:#8892a4;font-size:13px;">Full Name</td>
+                        <td style="color:#ffffff;font-size:14px;font-weight:600;text-align:right;">{name}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr><td style="height:8px;"></td></tr>
+                <tr>
+                  <td>
+                    <table width="100%" cellpadding="12" cellspacing="0" style="background:#131920;border-radius:10px;border:1px solid #1e2d40;">
+                      <tr>
+                        <td width="40" style="font-size:20px;">🔑</td>
+                        <td style="color:#8892a4;font-size:13px;">Username</td>
+                        <td style="color:#00c6ff;font-size:14px;font-weight:700;text-align:right;">{uname}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr><td style="height:8px;"></td></tr>
+                <tr>
+                  <td>
+                    <table width="100%" cellpadding="12" cellspacing="0" style="background:#131920;border-radius:10px;border:1px solid #1e2d40;">
+                      <tr>
+                        <td width="40" style="font-size:20px;">📧</td>
+                        <td style="color:#8892a4;font-size:13px;">Email</td>
+                        <td style="color:#ffffff;font-size:14px;font-weight:600;text-align:right;">{email}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr><td style="height:8px;"></td></tr>
+                <tr>
+                  <td>
+                    <table width="100%" cellpadding="12" cellspacing="0" style="background:#131920;border-radius:10px;border:1px solid #1e2d40;">
+                      <tr>
+                        <td width="40" style="font-size:20px;">📱</td>
+                        <td style="color:#8892a4;font-size:13px;">Mobile</td>
+                        <td style="color:#ffffff;font-size:14px;font-weight:600;text-align:right;">{mobile}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- FEATURES -->
+          <tr>
+            <td style="padding:30px 40px 10px;">
+              <p style="color:#4a9eff;font-size:12px;letter-spacing:3px;text-transform:uppercase;margin:0 0 15px;">What You Can Do</p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td width="32%" style="background:linear-gradient(135deg,#0072ff15,#00c6ff10);border:1px solid #0072ff30;border-radius:12px;padding:20px;text-align:center;">
+                    <div style="font-size:32px;">🗺️</div>
+                    <p style="color:#00c6ff;font-size:13px;font-weight:700;margin:10px 0 4px;">Find Stations</p>
+                    <p style="color:#8892a4;font-size:12px;margin:0;line-height:1.5;">Locate nearby EV charging stations instantly</p>
+                  </td>
+                  <td width="2%"></td>
+                  <td width="32%" style="background:linear-gradient(135deg,#7b2ff715,#0072ff10);border:1px solid #7b2ff730;border-radius:12px;padding:20px;text-align:center;">
+                    <div style="font-size:32px;">⚡</div>
+                    <p style="color:#a78bfa;font-size:13px;font-weight:700;margin:10px 0 4px;">Book Slots</p>
+                    <p style="color:#8892a4;font-size:12px;margin:0;line-height:1.5;">Reserve your charging slot in advance</p>
+                  </td>
+                  <td width="2%"></td>
+                  <td width="32%" style="background:linear-gradient(135deg,#00c6ff15,#7b2ff710);border:1px solid #00c6ff30;border-radius:12px;padding:20px;text-align:center;">
+                    <div style="font-size:32px;">📊</div>
+                    <p style="color:#34d399;font-size:13px;font-weight:700;margin:10px 0 4px;">Track History</p>
+                    <p style="color:#8892a4;font-size:12px;margin:0;line-height:1.5;">Monitor all your charging sessions</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- CTA BUTTON -->
+          <tr>
+            <td style="padding:30px 40px;text-align:center;">
+              <a href="http://127.0.0.1:8000/login/" style="display:inline-block;background:linear-gradient(135deg,#0072ff,#7b2ff7);color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:50px;font-size:16px;font-weight:700;letter-spacing:1px;box-shadow:0 8px 25px rgba(0,114,255,0.4);">🚀 &nbsp; Start Charging Now</a>
+              <p style="color:#8892a4;font-size:13px;margin:16px 0 0;">Log in with your username: <strong style="color:#00c6ff;">{uname}</strong></p>
+            </td>
+          </tr>
+
+          <!-- DIVIDER -->
+          <tr>
+            <td style="padding:0 40px;">
+              <div style="height:1px;background:linear-gradient(90deg,transparent,#1e2d40,transparent);"></div>
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="padding:25px 40px;text-align:center;">
+              <p style="color:#4a9eff;font-size:13px;font-weight:600;margin:0 0 6px;">⚡ EV Charge Hub</p>
+              <p style="color:#8892a4;font-size:12px;margin:0 0 6px;">Powering the future of electric mobility</p>
+              <p style="color:#3d4a5c;font-size:11px;margin:0;">© 2026 EV Charge Hub. All rights reserved.<br>If you didn't create this account, please ignore this email.</p>
+            </td>
+          </tr>
+
+          <!-- BOTTOM GLOW BAR -->
+          <tr>
+            <td style="background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7,#00c6ff);height:4px;"></td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
+"""
+            from django.core.mail import EmailMultiAlternatives
+            mail = EmailMultiAlternatives(
+                subject='⚡ Welcome to EV Charge Hub – Registration Successful!',
+                body=f'Hi {name}, your registration at EV Charge Hub was successful! Username: {uname}',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[email],
+            )
+            mail.attach_alternative(html_message, "text/html")
+            mail.send(fail_silently=True)
+        except Exception:
+            pass
+
+        messages.success(request, "Registration successful, please login.")
+        return redirect('user_login')
+
+    return render(request, 'register.html')
+
+
+
+def user_home(request):
+    if 'user' not in request.session:
+        messages.error(request, "Invalid user credentials. please login")
+        return redirect('user_login')
+    uname = request.session['user']
+    user = EVRegister.objects.get(uname=uname)
+    bookings = EVBooking.objects.filter(uname=uname)
+    context = {
+        'data': user,
+        'bookings': bookings,
+        'uname': user.uname
+    }
+    return render(request, 'userhome.html', context)
+
+
+def user_station_selection(request):
+    if 'user' not in request.session:
+        messages.error(request, "Invalid user credentials. please login")
+        return redirect('user_login')
+
+    now = datetime.now()
+    rdate2 = now.strftime("%Y-%m-%d")
+
+    # Get user coordinates, convert to float
+    lat2 = float(request.GET.get('lat', 12.34))
+    lon2 = float(request.GET.get('lon', 56.78))
+    R = 6373.0  # Earth radius in km
+
+    uname = ""
+    if 'user' in request.session:
+        uname = request.session['user']
+
+    search_query = ""
+    if request.method == "POST":
+        search_query = request.POST.get('getval', '').strip()
+
+    stations = EVStation.objects.all()
+
+    if search_query:
+        stations = stations.filter(
+            city__icontains=search_query
+        ) | stations.filter(
+            area__icontains=search_query
+        ) | stations.filter(
+            name__icontains=search_query
+        ) | stations.filter(
+            landmark__icontains=search_query
+        )
+
+    data = []
+    for st in stations:
+        try:
+            lat1 = float(st.lat)
+            lon1 = float(st.lon)
+        except (TypeError, ValueError):
+            continue
+
+
+        # convert degrees to radians
+        lat1_rad = math.radians(lat1)
+        lon1_rad = math.radians(lon1)
+        lat2_rad = math.radians(lat2)
+        lon2_rad = math.radians(lon2)
+
+        dlon = lon2_rad - lon1_rad
+        dlat = lat2_rad - lat1_rad
+
+        a = math.sin(dlat / 2) ** 2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
+        if a > 1:
+            a = 1
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        distance = round(R * c, 2)
+
+        bookings = EVBooking.objects.filter(station=st, rdate=rdate2, status=1)
+        booking_status = "yes" if bookings.exists() else "no"
+        booking_info = [
+            [bk.uname, bk.carno, bk.reserve, bk.slot, bk.rdate, bk.btime1, bk.btime2]
+            for bk in bookings
+        ]
+
+        dt = [
+            st.uname, st.name, st.area, st.city, st.landmark,
+            st.numcharger, st.lat, st.lon,
+            booking_info, booking_status, distance, st.is_active
+        ]
+        data.append(dt)
+
+    return render(request, 'station.html', {
+        'data': data,
+        'uname': uname,
+        'st' : "1",
+        'rdate2': rdate2,
+        'search_query': search_query,
+    })
+
+
+
+def user_view_station_slots(request, sid):
+    if 'user' not in request.session:
+        messages.error(request, "Invalid user credentials. please login")
+        return redirect('user_login')
+
+    station = get_object_or_404(EVStation, uname=sid)
+    uname = request.session.get('user', '')
+
+
+    now = timezone.localtime()
+    rdate = now.strftime("%Y-%m-%d")
+    now_str = now.strftime("%H:%M")
+
+    slots = []
+    for i in range(1, station.numcharger + 1):
+
+        booking = EVBooking.objects.filter(
+            station__uname=sid,
+            slot=i,
+            status=1,
+            rdate=rdate
+        ).first()
+        if booking and booking.chargest == 2:
+            # If now >= end time, mark complete
+            try:
+                if now_str >= booking.btime2:
+                    booking.chargest = 3
+                    booking.chargemin = 0
+                    booking.chargesec = 0
+                    booking.save(update_fields=['chargest', 'chargemin', 'chargesec'])
+            except Exception:
+                pass
+        slots.append({'slot': i, 'booked': booking is not None, 'booking': booking})
+
+
+    return render(
+        request,
+        'slot.html',
+        {
+            'station': station,
+            'slots': slots,
+            'uname': uname,
+            'sid': sid,
+        }
+    )
+
+
+def book_slot(request):
+    if 'user' not in request.session:
+        messages.error(request, "Invalid user credentials. please login")
+        return redirect('user_login')
+
+    msg = ""
+    uname = request.session['user']
+    sid = request.GET.get('sid') or request.POST.get('sid')
+    slot = request.GET.get('slot') or request.POST.get('slot')
+
+    now = timezone.localtime()
+    rdate = now.strftime("%Y-%m-%d")
+    cdate = now.strftime("%Y-%m-%d") # Use YYYY-MM-DD format for current date
+    cd1 = cdate.split("-")
+
+    # Get the station object
+    station = EVStation.objects.filter(uname=sid).first()
+    tarr = [str(i) for i in range(24)]
+
+    # Check existing bookings for this slot for today
+    existing_bookings = EVBooking.objects.filter(station__uname=sid, status=1, slot=slot, rdate=cdate)
+    arr_time = []
+    for eb in existing_bookings:
+        if eb.rtime:
+            arr_time.append(eb.rtime.split(":"))
+
+    if request.method == "POST":
+        carno = request.POST['carno']
+        reserve = request.POST['reserve']
+        sid = request.POST['sid']
+        slot = request.POST['slot']
+        bdate = request.POST['bdate'] # This is YYYY-MM-DD from the form
+
+        t1 = request.POST['t1']
+        t2 = request.POST['t2']
+        t3 = request.POST['t3']
+        t4 = request.POST['t4']
+
+        sh = int(t1)
+        btime1 = f"{t1}:{t2}"
+        btime2 = f"{t3}:{t4}"
+
+        now = timezone.localtime()
+        booking_datetime_str = f"{bdate} {btime1}"
+        booking_datetime = datetime.strptime(booking_datetime_str, "%Y-%m-%d %H:%M")
+        # Make booking_datetime timezone-aware
+        booking_datetime = timezone.make_aware(booking_datetime, timezone.get_current_timezone())
+
+
+        if booking_datetime < now:
+            messages.error(request, "Booking for a past date or time is not allowed.")
+            return redirect('slot', sid=sid)
+
+        start = datetime.strptime(btime1, "%H:%M")
+        end = datetime.strptime(btime2, "%H:%M")
+        delta_minutes = int((end - start).total_seconds() // 60)
+        if delta_minutes <= 0:
+            delta_minutes = 30  # fallback
+
+        bd1 = bdate.split("-")
+
+        # d0 is today, d1 is booking day
+        d0 = date(int(cd1[0]), int(cd1[1]), int(cd1[2]))
+        d1 = date(int(bd1[0]), int(bd1[1]), int(bd1[2]))
+        delta = d1 - d0
+        dy = delta.days
+
+        x = 0
+        # Check for concurrent bookings
+        concurrent_bookings = EVBooking.objects.filter(station__uname=sid, rdate=bdate, status=1)
+        for ts2 in concurrent_bookings:
+            th2 = ts2.rtime.split(":") if ts2.rtime else []
+            if th2 and th2[0] == t1:
+                x += 1
+
+        if x < 2 and dy >= 0:
+            cimage = "evch.jpg"
+            # Book new slot
+            user = EVRegister.objects.get(uname=uname)
+            station = EVStation.objects.get(uname=sid)
+            new_booking = EVBooking.objects.create(
+                uname=user,
+                station=station,
+                carno=carno,
+                reserve=reserve,
+                slot=slot,
+                cimage=cimage,
+                rtime=f"{t1}:{t2}",
+                rdate=bdate,
+                etime=f"{t3}:{t4}",
+                edate=bdate,
+                status=1,
+                btime1=btime1,
+                btime2=btime2,
+                mins=delta_minutes,
+                chargest=0,
+                chargemin=delta_minutes,
+                chargesec=0,
+            )
+            messages.success(request, f"Slot.no : {new_booking.slot} Booked successfully.")
+        else:
+            messages.error(request, f"Booking failed. Slot.no : {slot} may be unavailable or invalid time.")
+
+        return redirect('slot', sid=sid)
+
+    context = {
+        'msg': msg,
+        'uname': uname,
+        'sid': sid,
+        'slot': slot,
+        'rdate': rdate,
+        'tarr': tarr
+    }
+    return render(request, 'book.html', context)
+
+
+def rebook(request, rid):
+    if 'user' not in request.session:
+        messages.error(request, "Invalid user credentials. please login")
+        return redirect('user_login')
+
+    booking = get_object_or_404(EVBooking, id=rid)
+
+    # Only owner can reschedule
+    if booking.uname.uname != request.session['user']:
+        messages.error(request, "You are not allowed to reschedule this booking.")
+        return redirect('slot', sid=booking.station.uname)
+
+    now = timezone.localtime()
+    rdate = now.strftime('%Y-%m-%d')  # for <input type="date">
+    tarr = [str(i) for i in range(24)]
+
+    if request.method == 'POST':
+        bdate = request.POST.get('bdate')      # 'YYYY-MM-DD'
+        t1 = request.POST.get('t1')           # start hour
+        t2 = request.POST.get('t2')           # start minute
+        t3 = request.POST.get('t3')           # end hour
+        t4 = request.POST.get('t4')           # end minute
+
+        btime1 = f"{t1}:{t2}"
+        btime2 = f"{t3}:{t4}"
+
+        # basic validation: date not in past
+        cd = date.fromisoformat(rdate)
+        bd = date.fromisoformat(bdate)
+        if bd < cd:
+            messages.error(request, "Cannot reschedule to a past date.")
+            return render(request, 'rebook.html', {
+                'booking': booking,
+                'rdate': rdate,
+                'tarr': tarr,
+            })
+
+        # Todo: add your collision rules (max 2 per hour, etc.)
+
+        # Update existing booking
+        booking.btime1 = btime1
+        booking.btime2 = btime2
+        booking.rdate = bd.strftime('%Y-%m-%d')  # or '%Y-%m-%d' – match what you use elsewhere
+        booking.save()
+
+        messages.success(request, f"Slot.no : {booking.slot} Booking rescheduled successfully.")
+        return redirect('slot', sid=booking.station.uname)
+
+    return render(request, 'rebook.html', {
+        'booking': booking,
+        'rdate': rdate,
+        'tarr': tarr,
+    })
+
+
+def booking_out(request, rid):
+    if 'user' not in request.session:
+        messages.error(request, "Invalid user credentials. please login")
+        return redirect('user_login')
+
+    booking = get_object_or_404(EVBooking, id=rid)
+
+    # Only the owner can act
+    if hasattr(booking.uname, 'uname'):
+        booking_uname = booking.uname.uname
+    else:
+        booking_uname = booking.uname
+
+    if booking_uname != request.session['user']:
+        messages.error(request, "You cannot cancel this booking.")
+        return redirect('slot', sid=booking.station.uname)
+
+    # Allow cancel only before charging
+    if booking.chargest != 0:
+        messages.error(request, "Charging already started. Cannot cancel now.")
+        return redirect('slot', sid=booking.station.uname)
+
+    booking.status = 0  # cancelled
+    booking.save(update_fields=['status'])
+    messages.success(request, f"Slot.no : {booking.slot} Booking cancelled successfully.")
+    return redirect('slot', sid=booking.station.uname)
+
+
+def select_plan(request):
+    if 'user' not in request.session:
+        messages.error(request, "Invalid user credentials. please login")
+        return redirect('user_login')
+
+    # Support both first GET and POST submit
+    sid = request.GET.get('sid') or request.POST.get('sid')
+    rid = request.GET.get('rid') or request.POST.get('rid')
+
+    if not rid:
+        # No booking id – go back to slots for this station
+        if sid:
+            return redirect('slot', sid=sid)
+        return redirect('user_home')  # or some safe default
+
+    booking = get_object_or_404(EVBooking, id=rid)
+
+    if request.method == 'POST':
+        plan = request.POST.get('plan')
+        if not plan:
+            messages.error(request, 'Please select a plan')
+            return render(request, 'select.html', {'sid': sid, 'rid': rid, 'booking': booking})
+
+        plan_int = int(plan)
+        booking.plan = plan_int
+
+        # map each plan number to mins and amount
+        if plan_int == 1:
+            booking.amount = 100
+        elif plan_int == 2:
+            booking.amount = 200
+        elif plan_int == 3:
+            booking.amount = 300
+
+        booking.chargest = 1
+        booking.save(update_fields=['plan', 'amount', 'chargest'])
+
+        request.session['booking_id'] = booking.id
+
+        # If charge2 needs rid, pass it
+        return redirect('slot', sid=sid)  # adjust to your charge2 URL pattern
+
+    # Initial GET: show plan selection page
+    return render(request, 'select.html', {'sid': sid, 'rid': rid, 'booking': booking})
+
+
+def tariff_view(request):
+    return render(request, 'tariff.html')
+
+
+def user_history(request):
+    if 'user' not in request.session:
+        messages.error(request, "Invalid user credentials. please login")
+        return redirect('user_login')
+    
+    uname = request.session['user']
+
+    # Get all bookings for this user, with related station data
+    bookings = EVBooking.objects.filter(uname=uname).select_related('station').order_by('-rdate', '-rtime')
+
+    history_data = []
+    for b in bookings:
+        rtime_obj = None
+        if b.rtime:
+            try:
+                # Attempt to parse time in HH:MM:SS or HH:MM format
+                rtime_obj = datetime.strptime(b.rtime, '%H:%M:%S').time()
+            except ValueError:
+                try:
+                    rtime_obj = datetime.strptime(b.rtime, '%H:%M').time()
+                except ValueError:
+                    # Handle cases where rtime is not in expected format
+                    rtime_obj = None # Or set a default time, or pass the raw string
+
+        history_data.append({
+            'station_name': b.station.name if b.station else '',
+            'station_city': b.station.city if b.station else '',
+            'station_lat': b.station.lat if b.station else '',
+            'station_lon': b.station.lon if b.station else '',
+            'slot': b.slot,
+            'amount': b.amount,
+            'rtime': rtime_obj,
+            'etime': b.btime2,
+            'rdate': b.rdate,
+            # 'edate': b.end_time.date() if b.end_time else '',
+            'edate': b.rdate,
+            'chargest': b.chargest,
+            'payst': b.payst,
+        })
+
+    return render(request, 'history.html', {'data': history_data, 'uname': uname})
+
+
+def payment(request, rid=None):
+    if 'user' not in request.session:
+        messages.error(request, "Invalid user credentials. please login")
+        return redirect('user_login')
+
+    # 1) Get booking either from URL (OUT after charge) or from session (old flow)
+    if rid is not None:
+        booking = get_object_or_404(EVBooking, id=rid)
+    else:
+        booking_id = request.session.get('booking_id')
+        if not booking_id:
+            messages.error(request, "No active booking to pay for.")
+            return redirect('user_home')
+        booking = get_object_or_404(EVBooking, id=booking_id)
+
+    # 2) Optional: ensure only owner can pay
+    if hasattr(booking.uname, 'uname'):
+        booking_uname = booking.uname.uname
+    else:
+        booking_uname = booking.uname
+
+    if booking_uname != request.session['user']:
+        messages.error(request, "You cannot pay for this booking.")
+        return redirect('slot', sid=booking.station.uname)
+
+    # 3) Optional: ensure charging is completed before payment
+    if booking.chargest != 3:
+        messages.error(request, "Charging not completed yet.")
+        return redirect('slot', sid=booking.station.uname)
+
+    # 4) Set end time / amount like Flask (optional, if not already done elsewhere)
+    # booking.amount should already be set from select_plan; if you still need min 20:
+    if booking.amount <= 0:
+        booking.amount = 20
+        booking.save(update_fields=['amount'])
+
+    # 5) Handle payment submit
+    if request.method == 'POST':
+        pay_mode = request.POST.get('pay_mode')
+        if not pay_mode:
+            messages.error(request, "Please select a payment mode.")
+            return render(request, 'payment.html', {'booking': booking})
+
+        # Bank mode → generate OTP and go to verify_otp
+        if pay_mode == 'Bank':
+            otp = str(randint(100000, 999999))
+            booking.paymode = pay_mode
+            booking.otp = otp
+            booking.save(update_fields=['paymode', 'otp'])
+
+            # --- Send SMS ---
+            try:
+                user = EVRegister.objects.get(uname=request.session['user'])
+                mobile = user.mobile
+
+                # The message must match the pre-approved template associated with the templateid
+                sms_message = f"Dear {user.uname} Emergency Alert Message in the link:Key:{otp} By SMSWAY IOTCLD"
+                # URL-encode the message
+                encoded_message = urllib.parse.quote(sms_message)
+
+                url = (
+                    "http://pay4sms.in/sendsms/"
+                    f"?token=b81edee36bcef4ddbaa6ef535f8db03e&credit=2&sender=IOTCLD"
+                    f"&message={encoded_message}&number={mobile}&templateid=1207162443838625724"
+                )
+
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+                }
+                r = requests.get(url, timeout=10, headers=headers)
+
+                if r.status_code == 200 and "sent" in r.text.lower(): # Check for "sent" in response text
+                    messages.success(request, "OTP has been sent to your mobile.")
+                else:
+                    messages.error(request, f"Failed to send OTP. SMS gateway returned status {r.status_code}.")
+            except Exception as e:
+
+                messages.error(request, "Failed to send OTP. Please try again.")
+                # We might want to stay on the payment page if OTP sending fails
+                return render(request, 'payment.html', {'booking': booking})
+
+            return redirect('verify_otp', rid=booking.id)
+
+        # Other modes → mark paid directly
+        else:
+            booking.paymode = pay_mode
+            booking.payst = 1
+            booking.save(update_fields=['paymode', 'payst'])
+            messages.success(request, f"Payment successful for Slot.no : {booking.slot}, Paid Amount INR {booking.amount}.")
+            return redirect('slot', sid=booking.station.uname)
+
+    return render(request, 'payment.html', {'booking': booking})
+
+
+def verify_otp(request, rid):
+    if 'user' not in request.session:
+        messages.error(request, "Invalid user credentials. please login")
+        return redirect('user_login')
+    
+    booking = get_object_or_404(EVBooking, id=rid)
+
+    key = booking.otp
+    msg = ""
+
+    if request.method == 'POST':
+        otp_entered = request.POST.get('otp', '').strip()
+        if otp_entered and otp_entered == key:
+            booking.payst = 2    # pay_st=2
+            booking.status = 3   # status=3
+            booking.save(update_fields=['payst', 'status'])
+            messages.success(request, f"Payment successful for Slot.no : {booking.slot}, Paid Amount INR {booking.amount}.")
+            return redirect('slot', sid=booking.station.uname)
+        else:
+            msg = "Invalid OTP"
+            messages.error(request, msg)
+
+    return render(request, 'verify_otp.html', {'booking': booking, 'msg': msg})
+
+
+def resend_otp(request, rid):
+    if 'user' not in request.session:
+        messages.error(request, "Invalid user credentials. please login")
+        return redirect('user_login')
+
+    booking = get_object_or_404(EVBooking, id=rid)
+
+    # Generate a new OTP
+    otp = str(randint(100000, 999999))
+    booking.otp = otp
+    booking.save(update_fields=['otp'])
+
+    # --- Send SMS ---
+    try:
+        user = EVRegister.objects.get(uname=request.session['user'])
+        mobile = user.mobile
+
+        # The message must match the pre-approved template associated with the templateid
+        sms_message = f"Dear {user.uname} Emergency Alert Message in the link:Key:{otp} By SMSWAY IOTCLD"
+        # URL-encode the message
+        encoded_message = urllib.parse.quote(sms_message)
+
+        url = (
+            "http://pay4sms.in/sendsms/"
+            f"?token=b81edee36bcef4ddbaa6ef535f8db03e&credit=2&sender=IOTCLD"
+            f"&message={encoded_message}&number={mobile}&templateid=1207162443838625724"
+        )
+
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+        }
+        r = requests.get(url, timeout=10, headers=headers)
+
+        if r.status_code == 200 and "sent" in r.text.lower(): # Check for "sent" in response text
+            messages.success(request, "OTP has been resent to your mobile.")
+        else:
+            messages.error(request, f"Failed to resend OTP. SMS gateway returned status {r.status_code}.")
+    except Exception as e:
+        messages.error(request, "Failed to resend OTP. Please try again.")
+
+    return redirect('verify_otp', rid=booking.id)
+
+
+def user_logout(request):
+    if 'user' in request.session:
+        request.session.flush()
+    messages.success(request, "You have been logged out.")
+    return redirect('user_login')
+
+
+@csrf_exempt
+@require_POST
+def station_heartbeat(request):
+    if 'station_owner' in request.session:
+        uname = request.session['station_owner']
+        try:
+            station = EVStation.objects.get(uname=uname)
+            station.last_seen = timezone.now()
+            station.save(update_fields=['last_seen'])
+            return HttpResponse(status=200)
+        except EVStation.DoesNotExist:
+            pass
+    return HttpResponse(status=401) # Unauthorized
+
+
+def booking_status_api(request):
+    now = datetime.now()
+    rdate2 = now.strftime("%Y-%m-%d")
+
+    stations = EVStation.objects.all()
+    data = {}
+    for st in stations:
+        bookings = EVBooking.objects.filter(station=st, rdate=rdate2, status=1)
+        booking_status = "yes" if bookings.exists() else "no"
+        booking_info = [
+            {
+                'slot': bk.slot,
+                'btime1': bk.btime1,
+                'btime2': bk.btime2,
+            }
+            for bk in bookings
+        ]
+        data[st.uname] = {
+            'booking_status': booking_status,
+            'booking_info': booking_info,
+        }
+
+    return JsonResponse(data)
+
+
+def station_status_api(request):
+    # Update inactive stations based on last_seen timestamp
+    # A station is considered inactive if its last_seen is older than 30 seconds
+    thirty_seconds_ago = timezone.now() - timedelta(seconds=30)
+    EVStation.objects.filter(is_active=True, last_seen__lt=thirty_seconds_ago).update(is_active=False)
+
+    stations = EVStation.objects.all()
+    data = {station.uname: {'is_active': station.is_active, 'status': station.status} for station in stations}
+    return JsonResponse(data)
+
+
+def station_slots_api(request, sid):
+    # Allow both station owners and regular users to hit this endpoint
+    if not (request.session.get('station_owner') or request.session.get('user')):
+         return JsonResponse({'error': 'Authentication required'}, status=403)
+
+    station = get_object_or_404(EVStation, uname=sid)
+    slots_data = get_slot_data(station)
+
+    # Serialize the data to make it safe for JSON conversion
+    serializable_slots = []
+    for slot in slots_data:
+        booking_info = None
+        if slot['booking']:
+            b = slot['booking']
+            
+            # Format end_time to ISO 8601 string if it exists
+            end_time_iso = b.end_time.isoformat() if b.end_time else None
+
+            booking_info = {
+                'id': b.id,
+                'carno': b.carno,
+                'chargest': b.chargest,
+                'payst': b.payst,
+                'paymode': b.paymode,
+                'end_time': end_time_iso,
+                'uname': b.uname.uname, # Add this line
+            }
+        serializable_slots.append({
+            'slot_flag': slot['slot_flag'],
+            'slot_num': slot['slot_num'],
+            'booking': booking_info
+        })
+
+    return JsonResponse({'slots': serializable_slots, 'current_user_uname': request.session.get('user', '')})
+
+
+
+# PDF Generation Functions
+
+def history_pdf(request):
+    """Generate PDF for user charging history"""
+    if 'user' not in request.session:
+        messages.error(request, "Invalid user credentials. please login")
+        return redirect('user_login')
+    
+    uname = request.session['user']
+    
+    # Get all bookings for this user, with related station data
+    bookings = EVBooking.objects.filter(uname=uname).select_related('station').order_by('-rdate', '-rtime')
+
+    history_data = []
+    for b in bookings:
+        rtime_obj = None
+        if b.rtime:
+            try:
+                # Attempt to parse time in HH:MM:SS or HH:MM format
+                rtime_obj = datetime.strptime(b.rtime, '%H:%M:%S').time()
+            except ValueError:
+                try:
+                    rtime_obj = datetime.strptime(b.rtime, '%H:%M').time()
+                except ValueError:
+                    # Handle cases where rtime is not in expected format
+                    rtime_obj = None
+
+        history_data.append({
+            'station_name': b.station.name if b.station else '',
+            'station_city': b.station.city if b.station else '',
+            'slot': b.slot,
+            'amount': b.amount,
+            'rtime': rtime_obj,
+            'etime': b.btime2,
+            'rdate': b.rdate,
+            'chargest': b.chargest,
+            'payst': b.payst,
+        })
+
+    if WEASYPRINT_AVAILABLE:
+        # Use WeasyPrint for better PDF quality
+        html_string = render_to_string('history_pdf.html', {'data': history_data, 'uname': uname})
+        html = HTML(string=html_string)
+        pdf = html.write_pdf()
+        
+        response = HttpResponse(pdf, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="charging_history_{uname}.pdf"'
+        return response
+        
+    elif REPORTLAB_AVAILABLE:
+        # Fallback to ReportLab
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="charging_history_{uname}.pdf"'
+        
+        doc = SimpleDocTemplate(response, pagesize=A4)
+        elements = []
+        styles = getSampleStyleSheet()
+        
+        # Title
+        title = Paragraph(f"Charging History for {uname}", styles['Title'])
+        elements.append(title)
+        elements.append(Spacer(1, 12))
+        
+        # Table data
+        data = [['S.No', 'Station', 'Slot', 'Date', 'Time', 'Amount', 'Status']]
+        for i, row in enumerate(history_data, 1):
+            status = 'Completed' if row['chargest'] == 3 else 'Charging' if row['chargest'] == 2 else 'Waiting' if row['chargest'] == 1 else 'Cancelled'
+            data.append([
+                str(i),
+                f"{row['station_name']}, {row['station_city']}",
+                str(row['slot']),
+                row['rdate'],
+                row['rtime'].strftime('%H:%M') if row['rtime'] else '--',
+                f"₹{row['amount']}",
+                status
+            ])
+        
+        table = Table(data)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 14),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        
+        elements.append(table)
+        doc.build(elements)
+        return response
+    else:
+        # No PDF library available
+        messages.error(request, "PDF generation is not available. Please install WeasyPrint or ReportLab.")
+        return redirect('history')
+
+
+def report_pdf(request):
+    """Generate PDF for station reports"""
+    if not request.session.get('station_owner'):
+        messages.error(request, "Invalid station credentials. please login")
+        return redirect('station_login')
+    
+    uname = request.session['station_owner']
+    station = get_object_or_404(EVStation, uname=uname)
+
+    # Get all bookings for this station
+    bookings = EVBooking.objects.filter(station=station).order_by('-rdate', '-rtime')
+
+    # Prepare data for the template
+    history = []
+    for b in bookings:
+        history.append({
+            'user': b.uname.name,  # Get the user's name from the related EVRegister object
+            'slot_no': b.slot,
+            'in_time': b.btime1,
+            'out_time': b.btime2,
+            'start_date': b.rdate,
+            'end_date': b.rdate,
+            'status': b.chargest,
+            'pay_status': b.payst,
+            'amount': b.amount,
+        })
+
+    if WEASYPRINT_AVAILABLE:
+        # Use WeasyPrint for better PDF quality
+        html_string = render_to_string('report_pdf.html', {'history': history, 'station': station})
+        html = HTML(string=html_string)
+        pdf = html.write_pdf()
+        
+        response = HttpResponse(pdf, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="station_report_{station.name}.pdf"'
+        return response
+        
+    elif REPORTLAB_AVAILABLE:
+        # Fallback to ReportLab
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="station_report_{station.name}.pdf"'
+        
+        doc = SimpleDocTemplate(response, pagesize=A4)
+        elements = []
+        styles = getSampleStyleSheet()
+        
+        # Title
+        title = Paragraph(f"Station Report - {station.name}", styles['Title'])
+        elements.append(title)
+        elements.append(Spacer(1, 12))
+        
+        # Station info
+        info = Paragraph(f"Location: {station.area}, {station.city}<br/>Chargers: {station.numcharger}", styles['Normal'])
+        elements.append(info)
+        elements.append(Spacer(1, 12))
+        
+        # Table data
+        data = [['S.No', 'User', 'Slot', 'Date', 'In Time', 'Out Time', 'Amount', 'Status']]
+        for i, row in enumerate(history, 1):
+            status = 'Completed' if row['status'] == 3 else 'Charging' if row['status'] == 2 else 'Waiting' if row['status'] == 1 else 'Cancelled'
+            data.append([
+                str(i),
+                row['user'],
+                str(row['slot_no']),
+                row['start_date'],
+                row['in_time'],
+                row['out_time'],
+                f"₹{row['amount']}",
+                status
+            ])
+        
+        table = Table(data)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        
+        elements.append(table)
+        doc.build(elements)
+        return response
+    else:
+        # No PDF library available
+        messages.error(request, "PDF generation is not available. Please install WeasyPrint or ReportLab.")
+        return redirect('station_report')
