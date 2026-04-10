@@ -92,14 +92,15 @@ WSGI_APPLICATION = 'evslot_dj_pro.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'ev_charging',
-        'USER': 'root',
-        'PASSWORD': 'Naveen@637',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'NAME': 'defaultdb',
+        'USER': 'avnadmin',
+        'PASSWORD': 'AVNS_9JiyFWT2yQMbBkfnDiG',
+        'HOST': 'mysql-3deff64d-evslot.i.aivencloud.com',
+        'PORT': '28231',
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             'charset': 'utf8mb4',
+            'ssl': {'ca': None},
         },
     }
 }
@@ -140,6 +141,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = '/static/'
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
