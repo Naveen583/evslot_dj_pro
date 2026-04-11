@@ -404,179 +404,50 @@ def user_register(request):
         )
         user.save()
 
-        # Send confirmation email
+        # Send confirmation email in background thread
         try:
+            import threading
             html_message = f"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Welcome to EV Charge Hub</title>
 </head>
 <body style="margin:0;padding:0;background-color:#0a0e1a;font-family:'Segoe UI',Arial,sans-serif;">
-
-  <!-- Wrapper -->
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0e1a;padding:40px 0;">
     <tr>
       <td align="center">
-        <table width="620" cellpadding="0" cellspacing="0" style="background-color:#0d1117;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,150,255,0.2);">
-
-          <!-- TOP GLOW BAR -->
+        <table width="620" cellpadding="0" cellspacing="0" style="background-color:#0d1117;border-radius:20px;overflow:hidden;">
+          <tr><td style="background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7);height:5px;"></td></tr>
           <tr>
-            <td style="background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7,#00c6ff);height:5px;"></td>
-          </tr>
-
-          <!-- HERO SECTION -->
-          <tr>
-            <td style="background:linear-gradient(135deg,#0d1117 0%,#0a1628 50%,#0d1117 100%);padding:50px 40px 30px;text-align:center;">
-              <div style="display:inline-block;background:linear-gradient(135deg,#00c6ff,#0072ff);border-radius:50%;width:80px;height:80px;line-height:80px;font-size:38px;margin-bottom:20px;">⚡</div>
-              <h1 style="margin:0;font-size:32px;font-weight:800;background:linear-gradient(90deg,#00c6ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:1px;">EV CHARGE HUB</h1>
-              <p style="color:#4a9eff;font-size:13px;letter-spacing:4px;margin:6px 0 0;text-transform:uppercase;">Smart Charging · Smarter Living</p>
+            <td style="padding:40px;text-align:center;">
+              <h1 style="color:#00c6ff;">⚡ EV CHARGE HUB</h1>
+              <h2 style="color:#ffffff;">Welcome, {name}! 🎉</h2>
+              <p style="color:#8892a4;">Registration successful! Username: <strong style="color:#00c6ff;">{uname}</strong></p>
             </td>
           </tr>
-
-          <!-- WELCOME BANNER -->
-          <tr>
-            <td style="padding:0 40px;">
-              <div style="background:linear-gradient(135deg,#0072ff15,#7b2ff715);border:1px solid #0072ff40;border-radius:16px;padding:30px;text-align:center;">
-                <p style="color:#4a9eff;font-size:13px;letter-spacing:3px;text-transform:uppercase;margin:0 0 10px;">Registration Successful</p>
-                <h2 style="color:#ffffff;font-size:26px;margin:0 0 12px;font-weight:700;">Welcome, {name}! 🎉</h2>
-                <p style="color:#8892a4;font-size:15px;line-height:1.7;margin:0;">You've successfully joined the future of electric vehicle charging. Your account is ready and waiting for you to explore!</p>
-              </div>
-            </td>
-          </tr>
-
-          <!-- ACCOUNT DETAILS -->
-          <tr>
-            <td style="padding:30px 40px 10px;">
-              <p style="color:#4a9eff;font-size:12px;letter-spacing:3px;text-transform:uppercase;margin:0 0 15px;">Your Account Details</p>
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="padding:4px 0;">
-                    <table width="100%" cellpadding="12" cellspacing="0" style="background:#131920;border-radius:10px;border:1px solid #1e2d40;">
-                      <tr>
-                        <td width="40" style="font-size:20px;">👤</td>
-                        <td style="color:#8892a4;font-size:13px;">Full Name</td>
-                        <td style="color:#ffffff;font-size:14px;font-weight:600;text-align:right;">{name}</td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-                <tr><td style="height:8px;"></td></tr>
-                <tr>
-                  <td>
-                    <table width="100%" cellpadding="12" cellspacing="0" style="background:#131920;border-radius:10px;border:1px solid #1e2d40;">
-                      <tr>
-                        <td width="40" style="font-size:20px;">🔑</td>
-                        <td style="color:#8892a4;font-size:13px;">Username</td>
-                        <td style="color:#00c6ff;font-size:14px;font-weight:700;text-align:right;">{uname}</td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-                <tr><td style="height:8px;"></td></tr>
-                <tr>
-                  <td>
-                    <table width="100%" cellpadding="12" cellspacing="0" style="background:#131920;border-radius:10px;border:1px solid #1e2d40;">
-                      <tr>
-                        <td width="40" style="font-size:20px;">📧</td>
-                        <td style="color:#8892a4;font-size:13px;">Email</td>
-                        <td style="color:#ffffff;font-size:14px;font-weight:600;text-align:right;">{email}</td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-                <tr><td style="height:8px;"></td></tr>
-                <tr>
-                  <td>
-                    <table width="100%" cellpadding="12" cellspacing="0" style="background:#131920;border-radius:10px;border:1px solid #1e2d40;">
-                      <tr>
-                        <td width="40" style="font-size:20px;">📱</td>
-                        <td style="color:#8892a4;font-size:13px;">Mobile</td>
-                        <td style="color:#ffffff;font-size:14px;font-weight:600;text-align:right;">{mobile}</td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- FEATURES -->
-          <tr>
-            <td style="padding:30px 40px 10px;">
-              <p style="color:#4a9eff;font-size:12px;letter-spacing:3px;text-transform:uppercase;margin:0 0 15px;">What You Can Do</p>
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td width="32%" style="background:linear-gradient(135deg,#0072ff15,#00c6ff10);border:1px solid #0072ff30;border-radius:12px;padding:20px;text-align:center;">
-                    <div style="font-size:32px;">🗺️</div>
-                    <p style="color:#00c6ff;font-size:13px;font-weight:700;margin:10px 0 4px;">Find Stations</p>
-                    <p style="color:#8892a4;font-size:12px;margin:0;line-height:1.5;">Locate nearby EV charging stations instantly</p>
-                  </td>
-                  <td width="2%"></td>
-                  <td width="32%" style="background:linear-gradient(135deg,#7b2ff715,#0072ff10);border:1px solid #7b2ff730;border-radius:12px;padding:20px;text-align:center;">
-                    <div style="font-size:32px;">⚡</div>
-                    <p style="color:#a78bfa;font-size:13px;font-weight:700;margin:10px 0 4px;">Book Slots</p>
-                    <p style="color:#8892a4;font-size:12px;margin:0;line-height:1.5;">Reserve your charging slot in advance</p>
-                  </td>
-                  <td width="2%"></td>
-                  <td width="32%" style="background:linear-gradient(135deg,#00c6ff15,#7b2ff710);border:1px solid #00c6ff30;border-radius:12px;padding:20px;text-align:center;">
-                    <div style="font-size:32px;">📊</div>
-                    <p style="color:#34d399;font-size:13px;font-weight:700;margin:10px 0 4px;">Track History</p>
-                    <p style="color:#8892a4;font-size:12px;margin:0;line-height:1.5;">Monitor all your charging sessions</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- CTA BUTTON -->
-          <tr>
-            <td style="padding:30px 40px;text-align:center;">
-              <a href="http://127.0.0.1:8000/login/" style="display:inline-block;background:linear-gradient(135deg,#0072ff,#7b2ff7);color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:50px;font-size:16px;font-weight:700;letter-spacing:1px;box-shadow:0 8px 25px rgba(0,114,255,0.4);">🚀 &nbsp; Start Charging Now</a>
-              <p style="color:#8892a4;font-size:13px;margin:16px 0 0;">Log in with your username: <strong style="color:#00c6ff;">{uname}</strong></p>
-            </td>
-          </tr>
-
-          <!-- DIVIDER -->
-          <tr>
-            <td style="padding:0 40px;">
-              <div style="height:1px;background:linear-gradient(90deg,transparent,#1e2d40,transparent);"></div>
-            </td>
-          </tr>
-
-          <!-- FOOTER -->
-          <tr>
-            <td style="padding:25px 40px;text-align:center;">
-              <p style="color:#4a9eff;font-size:13px;font-weight:600;margin:0 0 6px;">⚡ EV Charge Hub</p>
-              <p style="color:#8892a4;font-size:12px;margin:0 0 6px;">Powering the future of electric mobility</p>
-              <p style="color:#3d4a5c;font-size:11px;margin:0;">© 2026 EV Charge Hub. All rights reserved.<br>If you didn't create this account, please ignore this email.</p>
-            </td>
-          </tr>
-
-          <!-- BOTTOM GLOW BAR -->
-          <tr>
-            <td style="background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7,#00c6ff);height:4px;"></td>
-          </tr>
-
+          <tr><td style="background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7);height:4px;"></td></tr>
         </table>
       </td>
     </tr>
   </table>
-
 </body>
-</html>
-"""
+</html>"""
             from django.core.mail import EmailMultiAlternatives
-            mail = EmailMultiAlternatives(
-                subject='⚡ Welcome to EV Charge Hub – Registration Successful!',
-                body=f'Hi {name}, your registration at EV Charge Hub was successful! Username: {uname}',
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[email],
-            )
-            mail.attach_alternative(html_message, "text/html")
-            mail.send(fail_silently=True)
+            def send_email():
+                try:
+                    mail = EmailMultiAlternatives(
+                        subject='⚡ Welcome to EV Charge Hub – Registration Successful!',
+                        body=f'Hi {name}, your registration at EV Charge Hub was successful! Username: {uname}',
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        to=[email],
+                    )
+                    mail.attach_alternative(html_message, "text/html")
+                    mail.send(fail_silently=True)
+                except Exception:
+                    pass
+            threading.Thread(target=send_email).start()
         except Exception:
             pass
 
@@ -584,7 +455,6 @@ def user_register(request):
         return redirect('user_login')
 
     return render(request, 'register.html')
-
 
 
 def user_home(request):
