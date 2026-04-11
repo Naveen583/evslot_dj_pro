@@ -6,3 +6,4 @@ db.sqlite3
 media/
 *.log
 Documentation/
+-evslot_dj_pro/
