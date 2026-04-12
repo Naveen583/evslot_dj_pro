@@ -25,9 +25,68 @@
     <link rel="stylesheet" href="{% static 'css/flaticon.css' %}">
     <link rel="stylesheet" href="{% static 'css/icomoon.css' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+      #ev-loader {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: linear-gradient(135deg, #0a0e1a 0%, #0d1b2a 50%, #0a0e1a 100%);
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.8s ease, visibility 0.8s ease;
+      }
+      #ev-loader.hidden { opacity: 0; visibility: hidden; }
+      .ev-loader-title { color: #00c6ff; font-family: 'Poppins', sans-serif; font-size: 28px; font-weight: 800; letter-spacing: 4px; margin-bottom: 8px; text-transform: uppercase; }
+      .ev-loader-subtitle { color: #4a9eff; font-family: 'Poppins', sans-serif; font-size: 12px; letter-spacing: 3px; margin-bottom: 40px; text-transform: uppercase; }
+      .road-container { position: relative; width: 320px; height: 120px; margin-bottom: 30px; }
+      .road { position: absolute; bottom: 0; width: 100%; height: 20px; background: #1a2a3a; border-radius: 4px; overflow: hidden; }
+      .road-line { position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 4px; background: #00c6ff; border-radius: 2px; animation: roadMove 0.6s linear infinite; }
+      .road-line:nth-child(1){left:0%} .road-line:nth-child(2){left:25%} .road-line:nth-child(3){left:50%} .road-line:nth-child(4){left:75%}
+      @keyframes roadMove { 0%{transform:translateY(-50%) translateX(0)} 100%{transform:translateY(-50%) translateX(-320px)} }
+      .ev-car { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); font-size: 52px; animation: carBounce 0.5s ease-in-out infinite alternate; filter: drop-shadow(0 0 15px #00c6ff); }
+      @keyframes carBounce { 0%{transform:translateX(-50%) translateY(0)} 100%{transform:translateX(-50%) translateY(-4px)} }
+      .lightning { position: absolute; font-size: 20px; animation: lightningFlash 0.8s ease-in-out infinite; }
+      .lightning-1{top:10px;left:30%;animation-delay:0s} .lightning-2{top:5px;left:50%;animation-delay:0.3s} .lightning-3{top:10px;left:70%;animation-delay:0.6s}
+      @keyframes lightningFlash { 0%,100%{opacity:0;transform:scale(0.8)} 50%{opacity:1;transform:scale(1.2);color:#ffd700} }
+      .ev-progress-container { width: 280px; background: #1a2a3a; border-radius: 50px; height: 8px; overflow: hidden; margin-bottom: 16px; border: 1px solid #0072ff40; }
+      .ev-progress-bar { height: 100%; background: linear-gradient(90deg, #00c6ff, #0072ff, #7b2ff7); border-radius: 50px; animation: charging 2s ease-in-out infinite; box-shadow: 0 0 10px #00c6ff; }
+      @keyframes charging { 0%{width:0%} 50%{width:80%} 100%{width:100%} }
+      .ev-progress-text { color: #4a9eff; font-family: 'Poppins', sans-serif; font-size: 12px; letter-spacing: 2px; }
+      .particle { position: absolute; width: 3px; height: 3px; background: #00c6ff; border-radius: 50%; animation: float linear infinite; opacity: 0; }
+      @keyframes float { 0%{transform:translateY(100vh) translateX(0);opacity:0} 10%{opacity:1} 90%{opacity:1} 100%{transform:translateY(-100px) translateX(50px);opacity:0} }
+    </style>
   </head>
   <body>
-    
+
+    <!-- EV LOADING SCREEN -->
+    <div id="ev-loader">
+      <div id="particles" style="position:absolute;width:100%;height:100%;overflow:hidden;top:0;left:0;pointer-events:none;"></div>
+      <div class="ev-loader-title">⚡ EV CHARGE HUB</div>
+      <div class="ev-loader-subtitle">Smart Charging · Smarter Living</div>
+      <div class="road-container">
+        <span class="lightning lightning-1">⚡</span>
+        <span class="lightning lightning-2">⚡</span>
+        <span class="lightning lightning-3">⚡</span>
+        <div class="ev-car">🚗</div>
+        <div class="road">
+          <div class="road-line"></div>
+          <div class="road-line"></div>
+          <div class="road-line"></div>
+          <div class="road-line"></div>
+        </div>
+      </div>
+      <div class="ev-progress-container"><div class="ev-progress-bar"></div></div>
+      <div class="ev-progress-text">CHARGING YOUR EXPERIENCE...</div>
+    </div>
+    <script>
+      const c=document.getElementById('particles');
+      for(let i=0;i<20;i++){const p=document.createElement('div');p.className='particle';p.style.left=Math.random()*100+'%';p.style.animationDuration=(Math.random()*3+2)+'s';p.style.animationDelay=(Math.random()*2)+'s';p.style.width=p.style.height=(Math.random()*4+2)+'px';c.appendChild(p);}
+      window.addEventListener('load',function(){setTimeout(function(){document.getElementById('ev-loader').classList.add('hidden');},2500);});
+    </script>
+
 	  <nav class="navbar navbar-expand-lg navbar-dark ftco_navbar bg-dark ftco-navbar-light" id="ftco-navbar">
 	    <div class="container">
 	      <a class="navbar-brand" href="">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;EV <span>WEB</span></a>
