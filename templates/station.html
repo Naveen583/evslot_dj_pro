@@ -135,13 +135,20 @@
                   {% for row in data %}
                   <tr>
                     <td>{{ forloop.counter }}</td>
-                    <td>{{ row.1 }}
-                      <br>
-                      <a href="https://maps.google.com/?q={{ row.6 }},{{ row.7 }}" target="_blank">
-                        {{ row.2 }},{{ row.3 }}
-                      </a>
-                      
-                      [{{ row.4 }}] <br>
+                    <td>
+                      <strong>{{ row.1 }}</strong><br>
+                      <small style="color:#555;">📍 {{ row.2 }}, {{ row.3 }} [{{ row.4 }}]</small><br>
+                      <span style="color:#0072ff;font-weight:600;">📏 {{ row.10 }} km away</span><br>
+                      <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
+                        <a href="https://www.google.com/maps/dir/?api=1&destination={{ row.6 }},{{ row.7 }}" target="_blank"
+                           style="background:#0072ff;color:#fff;padding:5px 10px;border-radius:6px;font-size:12px;text-decoration:none;font-weight:600;">
+                          🧭 Directions
+                        </a>
+                        <a href="https://maps.google.com/?q={{ row.6 }},{{ row.7 }}" target="_blank"
+                           style="background:#28a745;color:#fff;padding:5px 10px;border-radius:6px;font-size:12px;text-decoration:none;font-weight:600;">
+                          🗺️ View Map
+                        </a>
+                      </div>
                     </td>
                     <td id="booking-status-{{ row.0 }}">
                         <div class="booking-details">
