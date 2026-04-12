@@ -175,3 +175,7 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'naveenceo637@gmail.com')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'pyxjwerjhwrnogkf')
 DEFAULT_FROM_EMAIL = os.environ.get('EMAIL_HOST_USER', 'naveenceo637@gmail.com')
+
+# Razorpay
+RAZORPAY_KEY_ID = 'rzp_test_Scf4fVHkHkIMWM'
+RAZORPAY_KEY_SECRET = 'oA43MwQjCie9LiRhO4ZSvq4u'

@@ -1519,3 +1519,61 @@ def maps_view(request):
         'stations': stations_data,
         'uname': request.session['user'],
     })
+
+
+# ─── Razorpay Payment ────────────────────────────────────────────────────────
+
+def razorpay_payment(request, rid):
+    if 'user' not in request.session:
+        return redirect('user_login')
+
+    booking = get_object_or_404(EVBooking, id=rid)
+
+    if booking.chargest != 3:
+        messages.error(request, "Charging not completed yet.")
+        return redirect('slot', sid=booking.station.uname)
+
+    try:
+        import razorpay
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+        amount_paise = int(float(booking.amount) * 100)
+        order = client.order.create({
+            'amount': amount_paise,
+            'currency': 'INR',
+            'payment_capture': 1,
+            'notes': {'booking_id': str(booking.id)}
+        })
+        return render(request, 'razorpay_payment.html', {
+            'booking': booking,
+            'order': order,
+            'razorpay_key': settings.RAZORPAY_KEY_ID,
+            'amount_paise': amount_paise,
+        })
+    except Exception as e:
+        messages.error(request, f"Payment gateway error: {str(e)}")
+        return redirect('slot', sid=booking.station.uname)
+
+
+@csrf_exempt
+def razorpay_callback(request):
+    if request.method == 'POST':
+        try:
+            import razorpay
+            client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+            params = {
+                'razorpay_order_id': request.POST.get('razorpay_order_id'),
+                'razorpay_payment_id': request.POST.get('razorpay_payment_id'),
+                'razorpay_signature': request.POST.get('razorpay_signature'),
+            }
+            client.utility.verify_payment_signature(params)
+            booking_id = request.POST.get('booking_id')
+            booking = get_object_or_404(EVBooking, id=booking_id)
+            booking.paymode = 'Razorpay'
+            booking.payst = 2
+            booking.save(update_fields=['paymode', 'payst'])
+            messages.success(request, f"Payment successful! Amount: ₹{booking.amount}")
+            return redirect('slot', sid=booking.station.uname)
+        except Exception:
+            messages.error(request, "Payment verification failed.")
+            return redirect('user_home')
+    return redirect('user_home')

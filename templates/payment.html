@@ -40,7 +40,7 @@ function checkMode()
 </script>
   </head>
   <body>
-<div id='ev-splash' style='position:fixed;top:0;left:0;width:100%;height:100%;background:#0a0e1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s,visibility 0.5s;'><p style='font-size:36px;font-weight:800;background:linear-gradient(90deg,#00c6ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:0;'>&#9889; EV CHARGE HUB</p><p style='color:#4a9eff;letter-spacing:4px;font-size:12px;margin:8px 0 0;'>SMART CHARGING</p><div style='width:180px;height:4px;background:#1e2d40;border-radius:4px;margin-top:20px;overflow:hidden;'><div id='ev-bar' style='height:100%;width:0;background:linear-gradient(90deg,#00c6ff,#7b2ff7);border-radius:4px;'></div></div></div><script>setTimeout(function(){var b=document.getElementById('ev-bar');if(b){b.style.transition='width 1.6s ease';b.style.width='100%';}setTimeout(function(){var s=document.getElementById('ev-splash');if(s){s.style.opacity='0';s.style.visibility='hidden';}},1800);},50);</script>
+<div id='ev-splash' style='position:fixed;top:0;left:0;width:100%;height:100%;background:#0a0e1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s,visibility 0.5s;'><p style='font-size:36px;font-weight:800;background:linear-gradient(90deg,#00c6ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:0;'>&#9889; EV CHARGE HUB</p><p style='color:#4a9eff;letter-spacing:4px;font-size:12px;margin:8px 0 0;'>SMART CHARGING</p><div style='width:180px;height:4px;background:#1e2d40;border-radius:4px;margin-top:20px;overflow:hidden;'><div id='ev-bar' style='height:100%;width:0;background:linear-gradient(90deg,#00c6ff,#7b2ff7);border-radius:4px;'></div></div></div><script>setTimeout(function(){var b=document.getElementById('ev-bar');if(b){b.style.transition='width 1.6s ease';b.style.width='100%';}setTimeout(function(){var s=document.getElementById('ev-splash');if(s){s.style.display='none';}},1800);},50);</script>
     
 	  <nav class="navbar navbar-expand-lg navbar-dark ftco_navbar bg-dark ftco-navbar-light" id="ftco-navbar">
 	    <div class="container">
@@ -105,6 +105,18 @@ function checkMode()
           <div class="col-md-8 block-9 mb-md-5">
 		  <h3>Payment</h3>
 		  <span style="color:#FF0000">{{ msg }}</span>
+
+      <!-- Razorpay Online Payment -->
+      <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin-bottom:20px;border:2px solid #0072ff;">
+        <h5 style="color:#0072ff;font-weight:700;">💳 Pay Online (Recommended)</h5>
+        <p style="color:#555;font-size:13px;">UPI, Cards, NetBanking, Wallets — all in one</p>
+        <a href="{% url 'razorpay_payment' booking.id %}" class="btn btn-primary" style="background:linear-gradient(135deg,#0072ff,#7b2ff7);border:none;padding:10px 24px;border-radius:8px;font-weight:600;">
+          ⚡ Pay ₹{{ booking.amount }} Online
+        </a>
+      </div>
+
+      <p style="color:#888;text-align:center;margin:10px 0;">— or pay offline —</p>
+
       <form action="{% url 'payment' booking.id %}" method="POST" class="bg-light p-5 contact-form">{% csrf_token %}
           <div class="form-group">
                 <p>Booking ID: {{ booking.id }}</p>
