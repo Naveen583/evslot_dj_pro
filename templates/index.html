@@ -147,7 +147,57 @@
           <div class="col-lg-8 ftco-animate">
           	<div class="text w-100 text-center mb-md-5 pb-md-5">
 	            <h1 class="mb-4">Charging Slot Allocation and Automation System for Electric Vehicle Charging Station</h1>
-	            <p style="font-size: 18px;"></p>
+
+              <!-- EV Charging Animation -->
+              <div id="ev-charger-anim" style="margin:30px auto;width:220px;">
+                <svg viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg" style="width:100%;">
+                  <!-- Car body -->
+                  <rect x="30" y="90" width="140" height="45" rx="12" fill="#1a2a4a" stroke="#00c6ff" stroke-width="2"/>
+                  <rect x="55" y="68" width="90" height="35" rx="8" fill="#1a2a4a" stroke="#00c6ff" stroke-width="2"/>
+                  <!-- Windows -->
+                  <rect x="62" y="73" width="35" height="22" rx="4" fill="#0a1628" opacity="0.8"/>
+                  <rect x="103" y="73" width="35" height="22" rx="4" fill="#0a1628" opacity="0.8"/>
+                  <!-- Wheels -->
+                  <circle cx="70" cy="138" r="14" fill="#0d1117" stroke="#4a9eff" stroke-width="3"/>
+                  <circle cx="70" cy="138" r="6" fill="#4a9eff"/>
+                  <circle cx="150" cy="138" r="14" fill="#0d1117" stroke="#4a9eff" stroke-width="3"/>
+                  <circle cx="150" cy="138" r="6" fill="#4a9eff"/>
+                  <!-- Charging port -->
+                  <rect x="168" y="100" width="12" height="20" rx="3" fill="#00c6ff"/>
+                  <!-- Charging cable -->
+                  <path d="M 180 110 Q 200 110 200 90 L 200 30" stroke="#00c6ff" stroke-width="3" fill="none" stroke-dasharray="6,3">
+                    <animate attributeName="stroke-dashoffset" from="0" to="-18" dur="0.8s" repeatCount="indefinite"/>
+                  </path>
+                  <!-- Charging station -->
+                  <rect x="190" y="10" width="24" height="60" rx="4" fill="#1a2a4a" stroke="#7b2ff7" stroke-width="2"/>
+                  <rect x="195" y="18" width="14" height="20" rx="2" fill="#0a1628"/>
+                  <!-- Lightning bolt -->
+                  <text x="198" y="34" font-size="14" fill="#00c6ff">
+                    ⚡
+                    <animate attributeName="opacity" values="1;0.2;1" dur="0.8s" repeatCount="indefinite"/>
+                  </text>
+                  <!-- Battery bar -->
+                  <rect x="40" y="100" width="80" height="12" rx="4" fill="#0a1628" stroke="#1e2d40" stroke-width="1"/>
+                  <rect x="42" y="102" width="0" height="8" rx="3" fill="url(#battGrad)">
+                    <animate attributeName="width" from="0" to="76" dur="3s" repeatCount="indefinite" calcMode="linear"/>
+                  </rect>
+                  <defs>
+                    <linearGradient id="battGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stop-color="#00c6ff"/>
+                      <stop offset="100%" stop-color="#34d399"/>
+                    </linearGradient>
+                  </defs>
+                  <!-- Charging sparks -->
+                  <circle cx="185" cy="108" r="3" fill="#00c6ff">
+                    <animate attributeName="opacity" values="0;1;0" dur="0.6s" repeatCount="indefinite" begin="0s"/>
+                  </circle>
+                  <circle cx="178" cy="103" r="2" fill="#7b2ff7">
+                    <animate attributeName="opacity" values="0;1;0" dur="0.6s" repeatCount="indefinite" begin="0.2s"/>
+                  </circle>
+                </svg>
+                <p style="color:#00c6ff;font-size:12px;letter-spacing:2px;margin-top:4px;">CHARGING IN PROGRESS...</p>
+              </div>
+
                 <a href="#" class="icon-wrap popup-vimeo d-flex align-items-center mt-4 justify-content-center" onclick="playVideo(event)">
                     <!-- <div class="icon d-flex align-items-center justify-content-center">
                         <span class="ion-ios-play"></span>
