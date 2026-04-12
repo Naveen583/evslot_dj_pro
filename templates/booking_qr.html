@@ -1,0 +1,64 @@
+{% load static %}
+<html>
+<head>
+  <title>Booking QR – EV Charge Hub</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,600,700,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/ev-animations.css' %}">
+</head>
+<body style="background:#0a0e1a;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;">
+
+<div id="ev-splash">
+  <div class="ev-splash-logo">⚡ EV CHARGE HUB</div>
+  <div class="ev-splash-sub">Smart Charging · Smarter Living</div>
+  <div class="ev-splash-bar"><div class="ev-splash-bar-fill"></div></div>
+</div>
+
+<div class="page-content" style="width:100%;max-width:520px;">
+  <div style="background:#0d1117;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,150,255,0.2);">
+    <div style="background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7);height:5px;"></div>
+    <div style="padding:40px;text-align:center;">
+      <h1 style="color:#00c6ff;font-size:24px;font-weight:800;">⚡ EV CHARGE HUB</h1>
+      <p style="color:#4a9eff;font-size:12px;letter-spacing:3px;text-transform:uppercase;">Booking Confirmation</p>
+
+      {% if qr_base64 %}
+      <div style="background:#fff;border-radius:16px;padding:16px;display:inline-block;margin:20px 0;box-shadow:0 8px 25px rgba(0,114,255,0.3);">
+        <img src="data:image/png;base64,{{ qr_base64 }}" style="width:200px;height:200px;">
+      </div>
+      {% else %}
+      <div style="background:#131920;border-radius:16px;padding:30px;margin:20px 0;color:#8892a4;">
+        QR Code not available
+      </div>
+      {% endif %}
+
+      <div style="background:#131920;border-radius:12px;padding:20px;text-align:left;margin-top:10px;">
+        <table style="width:100%;color:#fff;font-size:14px;">
+          <tr><td style="color:#8892a4;padding:6px 0;">Booking ID</td><td style="color:#00c6ff;font-weight:700;">#{{ booking.id }}</td></tr>
+          <tr><td style="color:#8892a4;padding:6px 0;">Station</td><td>{{ booking.station.name }}</td></tr>
+          <tr><td style="color:#8892a4;padding:6px 0;">Slot No.</td><td>{{ booking.slot }}</td></tr>
+          <tr><td style="color:#8892a4;padding:6px 0;">Date</td><td>{{ booking.rdate }}</td></tr>
+          <tr><td style="color:#8892a4;padding:6px 0;">Time</td><td>{{ booking.btime1 }} – {{ booking.btime2 }}</td></tr>
+          <tr><td style="color:#8892a4;padding:6px 0;">Vehicle</td><td>{{ booking.carno }}</td></tr>
+          <tr><td style="color:#8892a4;padding:6px 0;">Amount</td><td style="color:#34d399;font-weight:700;">₹{{ booking.amount }}</td></tr>
+        </table>
+      </div>
+
+      <p style="color:#8892a4;font-size:12px;margin-top:16px;">Show this QR at the charging station</p>
+
+      <a href="{% url 'user_home' %}" class="btn-ev-glow" style="display:inline-block;margin-top:16px;padding:12px 28px;border-radius:8px;text-decoration:none;">
+        🏠 Go to Home
+      </a>
+    </div>
+    <div style="background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7);height:4px;"></div>
+  </div>
+</div>
+
+<script src="{% static 'js/jquery.min.js' %}"></script>
+<script>
+  setTimeout(() => { document.getElementById('ev-splash').classList.add('hide'); }, 1800);
+</script>
+</body>
+</html>

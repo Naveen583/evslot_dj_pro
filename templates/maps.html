@@ -1,0 +1,143 @@
+{% load static %}
+<html>
+<head>
+  <title>Find Stations – EV Charge Hub</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,600,700,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/ev-animations.css' %}">
+  <style>
+    #map { height: 500px; width: 100%; border-radius: 16px; }
+    body { background: #0a0e1a; font-family: 'Poppins', sans-serif; }
+  </style>
+</head>
+<body>
+
+<div id="ev-splash">
+  <div class="ev-splash-logo">⚡ EV CHARGE HUB</div>
+  <div class="ev-splash-sub">Smart Charging · Smarter Living</div>
+  <div class="ev-splash-bar"><div class="ev-splash-bar-fill"></div></div>
+</div>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark ftco_navbar bg-dark ftco-navbar-light" id="ftco-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="">EV <span>WEB</span></a>
+    <div class="collapse navbar-collapse">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item"><a href="{% url 'user_home' %}" class="nav-link">Home</a></li>
+        <li class="nav-item active"><a href="{% url 'maps_view' %}" class="nav-link">Maps</a></li>
+        <li class="nav-item"><a href="{% url 'user_station_selection' %}" class="nav-link">Station</a></li>
+        <li class="nav-item"><a href="{% url 'user_logout' %}" class="nav-link">Logout</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="page-content container" style="padding:30px 15px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <h2 style="color:#00c6ff;font-weight:800;">🗺️ Nearby EV Charging Stations</h2>
+    <p style="color:#8892a4;">Your current location → Find nearest stations → Get directions</p>
+  </div>
+
+  <div id="map"></div>
+
+  <!-- Station Cards -->
+  <div style="margin-top:24px;">
+    <h4 style="color:#fff;margin-bottom:16px;">All Stations</h4>
+    <div class="row">
+      {% for st in stations %}
+      <div class="col-md-4 mb-3">
+        <div class="ev-card" style="background:#0d1117;border:1px solid #1e2d40;border-radius:12px;padding:20px;">
+          <h5 style="color:#00c6ff;font-weight:700;">⚡ {{ st.name }}</h5>
+          <p style="color:#8892a4;font-size:13px;margin:4px 0;">📍 {{ st.area }}, {{ st.city }}</p>
+          <p style="color:#8892a4;font-size:13px;margin:4px 0;">🏛️ {{ st.landmark }}</p>
+          <p style="color:#8892a4;font-size:13px;margin:4px 0;">🔌 {{ st.numcharger }} Chargers</p>
+          <span style="color:{% if st.is_active %}#34d399{% else %}#f87171{% endif %};font-size:12px;font-weight:600;">
+            {% if st.is_active %}● Active{% else %}● Inactive{% endif %}
+          </span>
+          <div style="margin-top:12px;display:flex;gap:8px;">
+            <a href="https://www.google.com/maps/dir/?api=1&destination={{ st.lat }},{{ st.lon }}" target="_blank"
+               style="background:linear-gradient(90deg,#0072ff,#7b2ff7);color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;">
+              🧭 Directions
+            </a>
+            <a href="{% url 'slot' sid=st.uname %}"
+               style="background:#131920;border:1px solid #0072ff;color:#00c6ff;padding:8px 14px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;">
+              View Slots
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+  var stations = [
+    {% for st in stations %}
+    {name: "{{ st.name }}", lat: {{ st.lat }}, lng: {{ st.lon }}, area: "{{ st.area }}, {{ st.city }}", active: {{ st.is_active|yesno:"true,false" }}, uname: "{{ st.uname }}"},
+    {% endfor %}
+  ];
+
+  function initMap() {
+    var userLat = 11.0, userLng = 78.0;
+
+    var map = new google.maps.Map(document.getElementById('map'), {
+      zoom: 12,
+      center: {lat: userLat, lng: userLng},
+      styles: [
+        {elementType: "geometry", stylers: [{color: "#0d1117"}]},
+        {elementType: "labels.text.fill", stylers: [{color: "#8892a4"}]},
+        {featureType: "road", elementType: "geometry", stylers: [{color: "#1e2d40"}]},
+        {featureType: "water", elementType: "geometry", stylers: [{color: "#0a0e1a"}]}
+      ]
+    });
+
+    // User location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function(pos) {
+        userLat = pos.coords.latitude;
+        userLng = pos.coords.longitude;
+        map.setCenter({lat: userLat, lng: userLng});
+
+        new google.maps.Marker({
+          position: {lat: userLat, lng: userLng},
+          map: map,
+          title: "Your Location",
+          icon: {path: google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: "#00c6ff", fillOpacity: 1, strokeColor: "#fff", strokeWeight: 2}
+        });
+      });
+    }
+
+    // Station markers
+    stations.forEach(function(st) {
+      var marker = new google.maps.Marker({
+        position: {lat: parseFloat(st.lat), lng: parseFloat(st.lng)},
+        map: map,
+        title: st.name,
+        icon: {path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW, scale: 8, fillColor: st.active ? "#34d399" : "#f87171", fillOpacity: 1, strokeColor: "#fff", strokeWeight: 1}
+      });
+
+      var infoWindow = new google.maps.InfoWindow({
+        content: `<div style="font-family:Poppins,sans-serif;padding:8px;">
+          <strong style="color:#0072ff;">⚡ ${st.name}</strong><br>
+          <span style="color:#555;font-size:12px;">📍 ${st.area}</span><br>
+          <a href="https://www.google.com/maps/dir/?api=1&destination=${st.lat},${st.lng}" target="_blank" style="color:#0072ff;font-size:12px;">🧭 Get Directions</a>
+        </div>`
+      });
+
+      marker.addListener('click', function() { infoWindow.open(map, marker); });
+    });
+  }
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBVWaKrjvy3MaE7SQ74_uJiULgl1JY0H2s&callback=initMap" async defer></script>
+<script src="{% static 'js/jquery.min.js' %}"></script>
+<script src="{% static 'js/bootstrap.min.js' %}"></script>
+<script>
+  setTimeout(() => { document.getElementById('ev-splash').classList.add('hide'); }, 1800);
+</script>
+</body>
+</html>

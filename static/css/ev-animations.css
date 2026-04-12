@@ -1,0 +1,105 @@
+/* ===== EV CHARGE HUB - ANIMATIONS ===== */
+
+/* Splash Loader */
+#ev-splash {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: #0a0e1a;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+#ev-splash.hide {
+  opacity: 0;
+  visibility: hidden;
+}
+.ev-splash-logo {
+  font-size: 48px;
+  font-weight: 800;
+  background: linear-gradient(90deg, #00c6ff, #0072ff, #7b2ff7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: pulse-glow 1.5s ease-in-out infinite;
+  letter-spacing: 2px;
+}
+.ev-splash-sub {
+  color: #4a9eff;
+  font-size: 13px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-top: 8px;
+  animation: fadeInUp 0.8s ease 0.3s both;
+}
+.ev-splash-bar {
+  width: 200px;
+  height: 4px;
+  background: #1e2d40;
+  border-radius: 4px;
+  margin-top: 30px;
+  overflow: hidden;
+}
+.ev-splash-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00c6ff, #7b2ff7);
+  border-radius: 4px;
+  animation: loading-bar 1.8s ease forwards;
+}
+@keyframes loading-bar {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
+@keyframes pulse-glow {
+  0%, 100% { filter: drop-shadow(0 0 8px #00c6ff); }
+  50% { filter: drop-shadow(0 0 24px #7b2ff7); }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Page fade-in */
+.page-content {
+  animation: pageFadeIn 0.5s ease;
+}
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Card hover animations */
+.ev-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.ev-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(0, 114, 255, 0.2);
+}
+
+/* Glow button */
+.btn-ev-glow {
+  background: linear-gradient(135deg, #0072ff, #7b2ff7);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 28px;
+  font-weight: 600;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+.btn-ev-glow:hover {
+  box-shadow: 0 8px 25px rgba(0, 114, 255, 0.5);
+  transform: translateY(-2px);
+  color: #fff;
+}
+
+/* Notification animation */
+.fixed-top-notification {
+  animation: slideDown 0.4s ease;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}

@@ -25,6 +25,7 @@
     <link rel="stylesheet" href="{% static 'css/flaticon.css' %}">
     <link rel="stylesheet" href="{% static 'css/icomoon.css' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/ev-loader.css' %}">
 
 <script>
 var x = document.getElementById("demo");
@@ -48,6 +49,13 @@ function showPosition(position) {
 
   </head>
   <body onLoad="getLocation()">
+
+<!-- Splash Loader -->
+<div id="ev-splash">
+  <div class="ev-splash-logo">⚡ EV CHARGE HUB</div>
+  <div class="ev-splash-sub">Smart Charging · Smarter Living</div>
+  <div class="ev-splash-bar"><div class="ev-splash-bar-fill"></div></div>
+</div>
     
 	  <nav class="navbar navbar-expand-lg navbar-dark ftco_navbar bg-dark ftco-navbar-light" id="ftco-navbar">
 	    <div class="container">
@@ -257,5 +265,6 @@ function showNotification(messageText, rawTags) {
     }
 }
 </style>
+  <script src="{% static 'js/ev-loader.js' %}"></script>
   </body>
 </html>
