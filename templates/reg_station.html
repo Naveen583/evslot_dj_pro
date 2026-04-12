@@ -275,10 +275,16 @@ function showPosition(position) {
               </div>
 			  
 			  <div class="form-group">
-                <input type="text" name="lat" class="form-control" placeholder="Latitude">
+                <input type="text" name="lat" id="lat" class="form-control" placeholder="Latitude (Auto-detected)" readonly>
               </div>
 			  <div class="form-group">
-                <input type="text" name="lon" class="form-control" placeholder="Longitude">
+                <input type="text" name="lon" id="lon" class="form-control" placeholder="Longitude (Auto-detected)" readonly>
+              </div>
+			  <div class="form-group">
+                <button type="button" class="btn btn-info" onclick="getStationLocation()">
+                  📍 Detect My Current Location
+                </button>
+                <small id="loc-status" style="display:block;margin-top:6px;color:#28a745;"></small>
               </div>
 			  <div class="form-group">
                 <input type="text" name="uname" class="form-control" placeholder="Username">
@@ -407,5 +413,31 @@ function showNotification(messageText, rawTags) {
     }
 }
 </style>
-  </body>
+  <script>
+function getStationLocation() {
+  var status = document.getElementById('loc-status');
+  status.style.color = '#ffc107';
+  status.textContent = '⏳ Detecting location...';
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      function(pos) {
+        document.getElementById('lat').value = pos.coords.latitude.toFixed(6);
+        document.getElementById('lon').value = pos.coords.longitude.toFixed(6);
+        status.style.color = '#28a745';
+        status.textContent = '✅ Location detected: ' + pos.coords.latitude.toFixed(4) + ', ' + pos.coords.longitude.toFixed(4);
+      },
+      function(err) {
+        status.style.color = '#dc3545';
+        status.textContent = '❌ Location access denied. Please enable GPS.';
+      }
+    );
+  } else {
+    status.style.color = '#dc3545';
+    status.textContent = '❌ Geolocation not supported by your browser.';
+  }
+}
+// Auto-detect on page load
+window.addEventListener('load', function() { getStationLocation(); });
+</script>
+</body>
 </html>
