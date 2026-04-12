@@ -32,6 +32,8 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.ngrok-free.app',
     'https://*.ngrok-free.dev',
     'https://multisonorously-superdural-sophie.ngrok-free.dev',
+    'https://*.onrender.com',
+    'https://*.pythonanywhere.com',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
 ]
@@ -149,6 +151,8 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 STATICFILES_DIRS = [BASE_DIR / 'static']
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
