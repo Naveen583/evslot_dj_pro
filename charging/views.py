@@ -174,6 +174,9 @@ def station_home(request):
     
     uname = request.session['station_owner']
     station = get_object_or_404(EVStation, uname=uname)
+    station.is_active = True
+    station.last_seen = timezone.now()
+    station.save(update_fields=['is_active', 'last_seen'])
     bookings = EVBooking.objects.filter(station=station, status=1)
     return render(request, 'home.html', {'station': station, 'bookings': bookings})
 
@@ -1206,7 +1209,7 @@ def booking_status_api(request):
 def station_status_api(request):
     # Update inactive stations based on last_seen timestamp
     # A station is considered inactive if its last_seen is older than 30 seconds
-    thirty_seconds_ago = timezone.now() - timedelta(seconds=30)
+    thirty_seconds_ago = timezone.now() - timedelta(seconds=120)
     EVStation.objects.filter(is_active=True, last_seen__lt=thirty_seconds_ago).update(is_active=False)
 
     stations = EVStation.objects.all()
