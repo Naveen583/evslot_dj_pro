@@ -17,6 +17,7 @@ from django.template.loader import render_to_string
 
 try:
     import qrcode
+    from PIL import Image
     QRCODE_AVAILABLE = True
 except ImportError:
     QRCODE_AVAILABLE = False
@@ -1526,14 +1527,17 @@ def upi_payment(request, rid):
     upi_string = f"upi://pay?pa={upi_id}&pn={urllib.parse.quote(upi_name)}&am={amount}&cu=INR&tn={urllib.parse.quote(note)}"
 
     qr_base64 = ""
-    if QRCODE_AVAILABLE:
-        qr = qrcode.QRCode(version=1, box_size=8, border=4)
+    try:
+        import qrcode as qrc
+        qr = qrc.QRCode(version=1, box_size=8, border=4)
         qr.add_data(upi_string)
         qr.make(fit=True)
         img = qr.make_image(fill_color="#0072ff", back_color="white")
         buf = io.BytesIO()
         img.save(buf, format='PNG')
         qr_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
+    except Exception:
+        pass
 
     if request.method == 'POST':
         # Mark as paid after user confirms
