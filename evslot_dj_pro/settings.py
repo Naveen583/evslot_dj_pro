@@ -97,19 +97,18 @@ WSGI_APPLICATION = 'evslot_dj_pro.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_NAME', 'ev_charging'),
-        'USER': os.environ.get('DB_USER', 'root'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'Naveen@637'),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '3306'),
+        'NAME': os.environ.get('DB_NAME', 'defaultdb'),
+        'USER': os.environ.get('DB_USER', 'avnadmin'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'AVNS_9JiyFWT2yQMbBkfnDiG'),
+        'HOST': os.environ.get('DB_HOST', 'mysql-3deff64d-evslot.i.aivencloud.com'),
+        'PORT': os.environ.get('DB_PORT', '28231'),
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             'charset': 'utf8mb4',
+            'ssl': {'ssl-mode': 'preferred'},
         },
     }
 }
-
-
 
 
 # Password validation
