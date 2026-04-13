@@ -1462,7 +1462,7 @@ def upi_payment(request, rid):
         return redirect('slot', sid=booking.station.uname)
 
     # UPI payment string (works with PhonePe, GPay, Paytm)
-    upi_id = "naveenceo637@okicici"  # Replace with your UPI ID
+    upi_id = "naveenarul637-3@okicici"
     upi_name = "EV Charge Hub"
     amount = booking.amount
     note = f"EV Booking {booking.id}"
