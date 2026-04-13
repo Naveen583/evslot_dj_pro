@@ -110,9 +110,14 @@ function checkMode()
       <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin-bottom:20px;border:2px solid #0072ff;">
         <h5 style="color:#0072ff;font-weight:700;">💳 Pay Online (Recommended)</h5>
         <p style="color:#555;font-size:13px;">UPI, Cards, NetBanking, Wallets — all in one</p>
-        <a href="{% url 'razorpay_payment' booking.id %}" class="btn btn-primary" style="background:linear-gradient(135deg,#0072ff,#7b2ff7);border:none;padding:10px 24px;border-radius:8px;font-weight:600;">
-          ⚡ Pay ₹{{ booking.amount }} Online
-        </a>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <a href="{% url 'razorpay_payment' booking.id %}" class="btn btn-primary" style="background:linear-gradient(135deg,#0072ff,#7b2ff7);border:none;padding:10px 24px;border-radius:8px;font-weight:600;">
+            ⚡ Pay ₹{{ booking.amount }} via Card/NetBanking
+          </a>
+          <a href="{% url 'upi_payment' booking.id %}" class="btn btn-success" style="background:linear-gradient(135deg,#00b09b,#28a745);border:none;padding:10px 24px;border-radius:8px;font-weight:600;">
+            📱 Pay ₹{{ booking.amount }} via UPI QR
+          </a>
+        </div>
       </div>
 
       <p style="color:#888;text-align:center;margin:10px 0;">— or pay offline —</p>
