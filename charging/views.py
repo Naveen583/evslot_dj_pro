@@ -524,8 +524,9 @@ def user_station_selection(request):
     rdate2 = now.strftime("%Y-%m-%d")
 
     # Get user coordinates, convert to float
-    lat2 = float(request.GET.get('lat', 12.34))
-    lon2 = float(request.GET.get('lon', 56.78))
+    lat2 = float(request.GET.get('lat', 0))
+    lon2 = float(request.GET.get('lon', 0))
+    has_location = lat2 != 0 and lon2 != 0
     R = 6373.0  # Earth radius in km
 
     uname = ""
@@ -583,7 +584,7 @@ def user_station_selection(request):
         dt = [
             st.uname, st.name, st.area, st.city, st.landmark,
             st.numcharger, st.lat, st.lon,
-            booking_info, booking_status, distance, st.is_active
+            booking_info, booking_status, distance if has_location else 'N/A', st.is_active
         ]
         data.append(dt)
 

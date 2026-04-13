@@ -138,7 +138,7 @@
                     <td>
                       <strong>{{ row.1 }}</strong><br>
                       <small style="color:#555;">📍 {{ row.2 }}, {{ row.3 }} [{{ row.4 }}]</small><br>
-                      <span style="color:#0072ff;font-weight:600;">📏 {{ row.10 }} km away</span><br>
+                      <span style="color:#0072ff;font-weight:600;">📏 {% if row.10 != 'N/A' %}{{ row.10 }} km away{% else %}📍 Enable location for distance{% endif %}</span><br>
                       <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
                         <a href="https://www.google.com/maps/dir/?api=1&destination={{ row.6 }},{{ row.7 }}" target="_blank"
                            style="background:#0072ff;color:#fff;padding:5px 10px;border-radius:6px;font-size:12px;text-decoration:none;font-weight:600;">
