@@ -82,9 +82,43 @@ def admin_dashboard(request):
     if approve_station:
         station = EVStation.objects.filter(uname=approve_station).first()
         if station:
-            station.status = 1  # Set approved status
+            station.status = 1
             station.save()
             messages.success(request, f'Station "{approve_station}" approved successfully.')
+            # Send approval email to station
+            try:
+                def send_approval_email(st):
+                    try:
+                        html = f"""<html><body style="background:#0a0e1a;font-family:Arial,sans-serif;padding:30px;">
+<div style="max-width:600px;margin:auto;background:#0d1117;border-radius:16px;overflow:hidden;">
+<div style="background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7);height:5px;"></div>
+<div style="padding:30px;text-align:center;">
+<h1 style="color:#00c6ff;">&#9889; EV CHARGE HUB</h1>
+<h2 style="color:#34d399;">&#10003; Station Approved!</h2>
+<p style="color:#8892a4;">Your station <strong style="color:#fff;">{st.name}</strong> has been approved by admin!</p>
+<div style="background:#131920;border-radius:12px;padding:16px;text-align:left;margin:16px 0;">
+<table style="width:100%;color:#fff;font-size:14px;">
+<tr><td style="color:#8892a4;padding:5px 0;">Station</td><td>{st.name}</td></tr>
+<tr><td style="color:#8892a4;padding:5px 0;">Username</td><td style="color:#00c6ff;">{st.uname}</td></tr>
+<tr><td style="color:#8892a4;padding:5px 0;">Location</td><td>{st.area}, {st.city}</td></tr>
+</table></div>
+<p style="color:#8892a4;font-size:13px;">You can now login and start accepting bookings!</p>
+</div>
+<div style="background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7);height:4px;"></div>
+</div></body></html>"""
+                        mail = EmailMultiAlternatives(
+                            subject='✅ Station Approved – EV Charge Hub',
+                            body=f'Your station {st.name} has been approved!',
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            to=[st.email],
+                        )
+                        mail.attach_alternative(html, "text/html")
+                        mail.send(fail_silently=True)
+                    except Exception:
+                        pass
+                threading.Thread(target=send_approval_email, args=(station,)).start()
+            except Exception:
+                pass
 
     stations = EVStation.objects.all()
     users = EVRegister.objects.all()
@@ -1584,7 +1618,8 @@ def upi_payment(request, rid):
         # Mark as paid after user confirms
         booking.paymode = 'UPI'
         booking.payst = 1
-        booking.save(update_fields=['paymode', 'payst'])
+        booking.status = 0  # Reset slot to free
+        booking.save(update_fields=['paymode', 'payst', 'status'])
         messages.success(request, f"UPI Payment confirmed for Slot {booking.slot}! Amount: Rs.{booking.amount}")
         return redirect('slot', sid=booking.station.uname)
 
