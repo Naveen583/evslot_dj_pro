@@ -1045,6 +1045,44 @@ def payment(request, rid=None):
             booking.payst = 1
             booking.save(update_fields=['paymode', 'payst'])
             messages.success(request, f"Payment successful for Slot.no : {booking.slot}, Paid Amount INR {booking.amount}.")
+            # Send payment confirmation email
+            try:
+                user_obj = EVRegister.objects.get(uname=request.session['user'])
+                def send_pay_email(b, u):
+                    try:
+                        html = f"""<html><body style="background:#0a0e1a;font-family:Arial,sans-serif;padding:30px;">
+<div style="max-width:600px;margin:auto;background:#0d1117;border-radius:16px;overflow:hidden;">
+<div style="background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7);height:5px;"></div>
+<div style="padding:30px;text-align:center;">
+<h1 style="color:#00c6ff;">&#9889; EV CHARGE HUB</h1>
+<h2 style="color:#34d399;">&#10003; Payment Successful!</h2>
+<p style="color:#8892a4;">Hi <strong style="color:#fff;">{u.name}</strong>, your payment is confirmed!</p>
+<div style="background:#131920;border-radius:12px;padding:16px;text-align:left;margin:16px 0;">
+<table style="width:100%;color:#fff;font-size:14px;">
+<tr><td style="color:#8892a4;padding:5px 0;">Booking ID</td><td style="color:#00c6ff;font-weight:700;">#{b.id}</td></tr>
+<tr><td style="color:#8892a4;padding:5px 0;">Station</td><td>{b.station.name}</td></tr>
+<tr><td style="color:#8892a4;padding:5px 0;">Slot</td><td>{b.slot}</td></tr>
+<tr><td style="color:#8892a4;padding:5px 0;">Amount Paid</td><td style="color:#34d399;font-weight:700;">&#8377;{b.amount}</td></tr>
+<tr><td style="color:#8892a4;padding:5px 0;">Payment Mode</td><td>{b.paymode}</td></tr>
+</table></div>
+<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=EV+Booking+{b.id}+Payment+Confirmed+Amount+{b.amount}" style="width:150px;height:150px;border-radius:8px;margin:10px 0;border:3px solid #34d399;">
+<p style="color:#8892a4;font-size:12px;">Thank you for using EV Charge Hub!</p>
+</div>
+<div style="background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7);height:4px;"></div>
+</div></body></html>"""
+                        mail = EmailMultiAlternatives(
+                            subject=f'✅ Payment Confirmed – ₹{b.amount} | EV Charge Hub',
+                            body=f'Payment confirmed! Booking #{b.id}, Amount: ₹{b.amount}',
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            to=[u.email],
+                        )
+                        mail.attach_alternative(html, "text/html")
+                        mail.send(fail_silently=True)
+                    except Exception:
+                        pass
+                threading.Thread(target=send_pay_email, args=(booking, user_obj)).start()
+            except Exception:
+                pass
             return redirect('slot', sid=booking.station.uname)
 
     return render(request, 'payment.html', {'booking': booking})
