@@ -960,17 +960,28 @@ def select_plan(request):
         messages.error(request, "Invalid user credentials. please login")
         return redirect('user_login')
 
-    # Support both first GET and POST submit
     sid = request.GET.get('sid') or request.POST.get('sid')
     rid = request.GET.get('rid') or request.POST.get('rid')
 
     if not rid:
-        # No booking id – go back to slots for this station
         if sid:
             return redirect('slot', sid=sid)
-        return redirect('user_home')  # or some safe default
+        return redirect('user_home')
 
     booking = get_object_or_404(EVBooking, id=rid)
+
+    # Check if next person already booked this slot at the same end time
+    next_booking = EVBooking.objects.filter(
+        station=booking.station,
+        slot=booking.slot,
+        rdate=booking.rdate,
+        status=1,
+        btime1=booking.btime2  # next booking starts exactly when this one ends
+    ).exclude(id=booking.id).first()
+
+    if next_booking:
+        messages.error(request, f"⚠️ Slot {booking.slot} is already booked by another user from {next_booking.btime1} to {next_booking.btime2}. Please vacate the slot.")
+        return redirect('slot', sid=booking.station.uname)
 
     if request.method == 'POST':
         plan = request.POST.get('plan')
