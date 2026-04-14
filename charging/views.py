@@ -853,7 +853,7 @@ def book_slot(request):
         else:
             messages.error(request, f"Booking failed. Slot.no : {slot} may be unavailable or invalid time.")
 
-        return redirect('slot', sid=sid)
+        return redirect('booking_qr', rid=new_booking.id) if x < 2 and dy >= 0 else redirect('slot', sid=sid)
 
     context = {
         'msg': msg,
