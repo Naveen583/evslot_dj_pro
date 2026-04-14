@@ -772,7 +772,7 @@ def book_slot(request):
             station__uname=sid, slot=slot, rdate=bdate, status=1
         ).exclude(btime2__lte=btime1).exclude(btime1__gte=btime2).exists()
         if slot_conflict:
-            x = 99  # Force fail
+            x = 99  # Force fail — slot already booked at this time
 
         if x < 2 and dy >= 0:
             cimage = "evch.jpg"
@@ -1775,4 +1775,8 @@ def charging_wait(request, rid):
     if 'user' not in request.session:
         return redirect('user_login')
     booking = get_object_or_404(EVBooking, id=rid)
+    # Block access if charging already completed
+    if booking.chargest == 3:
+        messages.error(request, "Charging completed! Please proceed to payment.")
+        return redirect('slot', sid=booking.station.uname)
     return render(request, 'charging_wait.html', {'booking': booking})
