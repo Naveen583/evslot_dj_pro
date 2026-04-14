@@ -82,10 +82,11 @@
     <div class="qr-section">
       <p style="color:#8892a4;font-size:11px;margin-bottom:10px;letter-spacing:2px;text-transform:uppercase;">Show at Charging Station</p>
       <div class="qr-wrap">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=EVHUB-BOOKING-{{ booking.id }}-SLOT{{ booking.slot }}-{{ booking.rdate }}-{{ booking.carno }}"
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=EV+Charge+Hub%0ABooking+ID%3A+{{ booking.id }}%0AStation%3A+{{ booking.station.name }}%0ASlot%3A+{{ booking.slot }}%0ADate%3A+{{ booking.rdate }}%0ATime%3A+{{ booking.btime1 }}+-+{{ booking.btime2 }}%0AVehicle%3A+{{ booking.carno }}"
              style="width:180px;height:180px;display:block;" alt="Booking QR">
       </div>
       <p style="color:#4a9eff;font-size:11px;margin-top:8px;">📧 QR also sent to your email</p>
+      <p style="color:#8892a4;font-size:11px;margin-top:4px;">Redirecting to slot page in <span id="redir-count" style="color:#00c6ff;font-weight:700;">8</span>s...</p>
     </div>
   </div>
 
@@ -105,6 +106,18 @@
     {% endif %}
   </div>
 </div>
-
+<script>
+// Auto redirect to slot page after 8 seconds
+let count = 8;
+const counter = document.getElementById('redir-count');
+const timer = setInterval(() => {
+  count--;
+  if(counter) counter.textContent = count;
+  if(count <= 0) {
+    clearInterval(timer);
+    window.location.href = "{% url 'slot' sid=booking.station.uname %}";
+  }
+}, 1000);
+</script>
 </body>
 </html>
