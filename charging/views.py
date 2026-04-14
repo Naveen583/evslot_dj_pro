@@ -124,10 +124,26 @@ def admin_dashboard(request):
     users = EVRegister.objects.all()
     bookings = EVBooking.objects.all()
 
+    # Stats for dashboard
+    total_stations = stations.count()
+    active_stations = stations.filter(is_active=True).count()
+    total_users = users.count()
+    total_bookings = bookings.count()
+    completed_bookings = bookings.filter(chargest=3).count()
+    paid_bookings = bookings.filter(payst__gt=0).count()
+    total_revenue = sum(b.amount for b in bookings.filter(payst__gt=0))
+
     return render(request, 'admin.html', {
         'stations': stations,
         'users': users,
         'bookings': bookings,
+        'total_stations': total_stations,
+        'active_stations': active_stations,
+        'total_users': total_users,
+        'total_bookings': total_bookings,
+        'completed_bookings': completed_bookings,
+        'paid_bookings': paid_bookings,
+        'total_revenue': total_revenue,
     })
 
 
