@@ -45,6 +45,7 @@ urlpatterns = [
             path('booking-qr/<int:rid>/', views.booking_qr, name='booking_qr'),
             path('upi-payment/<int:rid>/', views.upi_payment, name='upi_payment'),
             path('maps/', views.maps_view, name='maps_view'),
+            path('charging-wait/<int:rid>/', views.charging_wait, name='charging_wait'),
             path('razorpay-payment/<int:rid>/', views.razorpay_payment, name='razorpay_payment'),
             path('razorpay-callback/', views.razorpay_callback, name='razorpay_callback'),
             path('api/booking_status/', views.booking_status_api, name='booking_status_api'),

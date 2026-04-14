@@ -1731,3 +1731,10 @@ def razorpay_callback(request):
             messages.error(request, "Payment verification failed.")
             return redirect('user_home')
     return redirect('user_home')
+
+
+def charging_wait(request, rid):
+    if 'user' not in request.session:
+        return redirect('user_login')
+    booking = get_object_or_404(EVBooking, id=rid)
+    return render(request, 'charging_wait.html', {'booking': booking})

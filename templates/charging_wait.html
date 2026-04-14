@@ -1,0 +1,171 @@
+{% load static %}
+<html>
+<head>
+  <title>Charging in Progress – EV Charge Hub</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,600,700,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+  <style>
+    body{background:#0a0e1a;font-family:'Poppins',sans-serif;color:#fff;min-height:100vh;}
+    .gbar{background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7);height:5px;}
+    .card-dark{background:#0d1117;border:1px solid #1e2d40;border-radius:16px;padding:24px;}
+    .fact-card{background:linear-gradient(135deg,#0072ff15,#7b2ff715);border:1px solid #0072ff30;border-radius:12px;padding:16px;margin-bottom:12px;}
+  </style>
+</head>
+<body>
+<div class="gbar"></div>
+
+<!-- Navbar -->
+<nav class="navbar navbar-dark" style="background:#0d1117;padding:12px 20px;">
+  <span style="color:#00c6ff;font-weight:800;font-size:18px;">⚡ EV CHARGE HUB</span>
+  <a href="{% url 'user_home' %}" style="color:#8892a4;font-size:13px;">🏠 Home</a>
+</nav>
+
+<div class="container py-4">
+  <div class="row">
+
+    <!-- Left: Charging Progress -->
+    <div class="col-md-5 mb-4">
+      <div class="card-dark text-center">
+        <h5 style="color:#4a9eff;letter-spacing:2px;font-size:12px;text-transform:uppercase;">Charging In Progress</h5>
+        <h3 style="color:#fff;font-weight:700;">Slot {{ booking.slot }}</h3>
+        <p style="color:#8892a4;font-size:13px;">{{ booking.station.name }}</p>
+
+        <!-- Battery Animation -->
+        <div style="margin:20px auto;width:120px;height:200px;border:4px solid #1e2d40;border-radius:12px;position:relative;overflow:hidden;">
+          <div id="battery-fill" style="position:absolute;bottom:0;width:100%;background:linear-gradient(0deg,#00c6ff,#34d399);border-radius:8px;transition:height 1s ease;" height="0%"></div>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:22px;font-weight:800;z-index:2;" id="battery-pct">0%</div>
+          <!-- Battery top nub -->
+          <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);width:30px;height:10px;background:#1e2d40;border-radius:4px 4px 0 0;"></div>
+        </div>
+
+        <!-- Countdown Timer -->
+        <div style="background:#131920;border-radius:12px;padding:16px;margin-top:16px;">
+          <p style="color:#8892a4;font-size:12px;margin:0 0 4px;">⏱️ Time Remaining</p>
+          <div id="countdown" style="font-size:36px;font-weight:800;color:#00c6ff;">--:--</div>
+        </div>
+
+        <!-- Booking Info -->
+        <div style="text-align:left;margin-top:16px;">
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e2d40;">
+            <span style="color:#8892a4;font-size:13px;">Vehicle</span>
+            <span style="font-size:13px;">{{ booking.carno }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e2d40;">
+            <span style="color:#8892a4;font-size:13px;">Start Time</span>
+            <span style="font-size:13px;">{{ booking.btime1 }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;">
+            <span style="color:#8892a4;font-size:13px;">End Time</span>
+            <span style="font-size:13px;color:#34d399;">{{ booking.btime2 }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Entertainment -->
+    <div class="col-md-7 mb-4">
+
+      <!-- EV Fun Facts Carousel -->
+      <div class="card-dark mb-3">
+        <h6 style="color:#4a9eff;font-weight:700;margin-bottom:12px;">💡 Did You Know?</h6>
+        <div id="fact-display" class="fact-card">
+          <p id="fact-text" style="margin:0;font-size:14px;color:#e2e8f0;">Loading...</p>
+        </div>
+        <div style="text-align:center;">
+          <button onclick="nextFact()" style="background:linear-gradient(90deg,#0072ff,#7b2ff7);border:none;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;cursor:pointer;">Next Fact ➡️</button>
+        </div>
+      </div>
+
+      <!-- Mini Tap Game -->
+      <div class="card-dark mb-3">
+        <h6 style="color:#4a9eff;font-weight:700;margin-bottom:8px;">🎮 Charge Tap Game</h6>
+        <p style="color:#8892a4;font-size:12px;">Tap the ⚡ as fast as you can!</p>
+        <div style="text-align:center;">
+          <div style="font-size:13px;color:#8892a4;margin-bottom:8px;">Score: <span id="score" style="color:#00c6ff;font-weight:700;">0</span></div>
+          <button id="tap-btn" onclick="tapGame()" style="font-size:48px;background:none;border:none;cursor:pointer;animation:pulse 1s infinite;">⚡</button>
+          <div style="font-size:12px;color:#8892a4;margin-top:4px;" id="tap-msg">Tap to start!</div>
+        </div>
+      </div>
+
+      <!-- EV Tips -->
+      <div class="card-dark">
+        <h6 style="color:#4a9eff;font-weight:700;margin-bottom:12px;">🔋 EV Charging Tips</h6>
+        <ul style="color:#8892a4;font-size:13px;padding-left:16px;margin:0;">
+          <li style="margin-bottom:8px;">Keep battery between <strong style="color:#34d399;">20%-80%</strong> for longer battery life</li>
+          <li style="margin-bottom:8px;">Avoid DC fast charging daily — use AC charging when possible</li>
+          <li style="margin-bottom:8px;">Pre-condition your car while plugged in to save battery</li>
+          <li style="margin-bottom:8px;">Charge during <strong style="color:#fbbf24;">off-peak hours</strong> (10pm-6am) for lower rates</li>
+          <li>Park in shade while charging to reduce heat stress on battery</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="gbar"></div>
+
+<script>
+// EV Fun Facts
+const facts = [
+  "⚡ The first electric car was built in 1884 by Thomas Parker in England!",
+  "🌍 EVs produce zero direct emissions — helping reduce air pollution in cities.",
+  "🔋 A Tesla Model S battery has over 7,000 individual lithium-ion cells!",
+  "🚀 The fastest EV (Rimac Nevera) goes 0-100 km/h in just 1.97 seconds!",
+  "💰 EV running cost is ~₹1-2 per km vs ₹6-8 per km for petrol cars in India.",
+  "🌱 Over its lifetime, an EV produces 50-70% less CO2 than a petrol car.",
+  "⚡ India has over 12,000 public EV charging stations as of 2025!",
+  "🔌 Wireless EV charging (no cable needed) is already being tested in some cities.",
+  "🏎️ Formula E racing uses 100% electric cars at speeds over 280 km/h!",
+  "🇮🇳 Tata Motors is India's #1 EV brand with over 80% market share in 2024."
+];
+let factIndex = 0;
+function nextFact() {
+  factIndex = (factIndex + 1) % facts.length;
+  document.getElementById('fact-text').textContent = facts[factIndex];
+}
+document.getElementById('fact-text').textContent = facts[0];
+setInterval(nextFact, 8000);
+
+// Tap Game
+let score = 0;
+function tapGame() {
+  score++;
+  document.getElementById('score').textContent = score;
+  const btn = document.getElementById('tap-btn');
+  btn.style.transform = 'scale(1.3)';
+  setTimeout(() => btn.style.transform = 'scale(1)', 100);
+  document.getElementById('tap-msg').textContent = score < 10 ? 'Keep going!' : score < 30 ? '🔥 On fire!' : '⚡ EV Champion!';
+}
+
+// Countdown Timer
+{% if booking.end_time %}
+const endTime = new Date("{{ booking.end_time|date:'Y-m-d H:i:s' }}").getTime();
+const totalDuration = {{ booking.duration_seconds }} * 1000;
+
+function updateTimer() {
+  const now = new Date().getTime();
+  const remaining = endTime - now;
+  if (remaining <= 0) {
+    document.getElementById('countdown').textContent = '✅ Done!';
+    document.getElementById('countdown').style.color = '#34d399';
+    document.getElementById('battery-fill').style.height = '100%';
+    document.getElementById('battery-pct').textContent = '100%';
+    return;
+  }
+  const mins = Math.floor(remaining / 60000);
+  const secs = Math.floor((remaining % 60000) / 1000);
+  document.getElementById('countdown').textContent = String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
+  const pct = Math.min(100, Math.round((1 - remaining/totalDuration) * 100));
+  document.getElementById('battery-fill').style.height = pct + '%';
+  document.getElementById('battery-pct').textContent = pct + '%';
+}
+updateTimer();
+setInterval(updateTimer, 1000);
+{% else %}
+document.getElementById('countdown').textContent = 'Charging...';
+{% endif %}
+</script>
+</body>
+</html>
