@@ -417,6 +417,38 @@ def user_login(request):
         if user:
             request.session['user'] = uname
             messages.success(request, "Login successful!")
+            # Send welcome back email in background
+            try:
+                def send_login_mail(u):
+                    try:
+                        html = f"""<html><body style="background:#0a0e1a;font-family:Arial,sans-serif;padding:30px;">
+<div style="max-width:500px;margin:auto;background:#0d1117;border-radius:16px;overflow:hidden;">
+<div style="background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7);height:5px;"></div>
+<div style="padding:30px;text-align:center;">
+<h1 style="color:#00c6ff;margin:0;">&#9889; EV CHARGE HUB</h1>
+<h3 style="color:#fff;margin:12px 0 4px;">Welcome back, {u.name}! 👋</h3>
+<p style="color:#8892a4;font-size:13px;">You just logged in to EV Charge Hub</p>
+<div style="background:#131920;border-radius:10px;padding:12px;margin:16px 0;text-align:left;">
+<p style="color:#8892a4;font-size:12px;margin:0 0 4px;">Username</p>
+<p style="color:#00c6ff;font-weight:700;font-size:16px;margin:0;">{u.uname}</p>
+</div>
+<p style="color:#8892a4;font-size:12px;">If this wasn't you, please change your password immediately.</p>
+</div>
+<div style="background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7);height:4px;"></div>
+</div></body></html>"""
+                        mail = EmailMultiAlternatives(
+                            subject='👋 Welcome back to EV Charge Hub!',
+                            body=f'Welcome back {u.name}! You just logged in.',
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            to=[u.email],
+                        )
+                        mail.attach_alternative(html, "text/html")
+                        mail.send(fail_silently=True)
+                    except Exception:
+                        pass
+                threading.Thread(target=send_login_mail, args=(user,)).start()
+            except Exception:
+                pass
             return redirect('user_home')
         else:
             messages.error(request, "Invalid credentials.")

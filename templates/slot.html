@@ -196,6 +196,8 @@
                                     <p>charging:
                                         <span id="slot-timer-${b.id}" data-slot-end-time="${b.end_time}" data-slot-booking-id="${b.id}"></span>
                                     </p>
+                                    <a href="/charging-wait/${b.id}/" style="background:linear-gradient(90deg,#0072ff,#7b2ff7);color:#fff;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;display:inline-block;margin:4px 2px;">🎮 Wait Room</a>
+                                    <a href="/booking-qr/${b.id}/" style="background:linear-gradient(90deg,#00b09b,#28a745);color:#fff;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;display:inline-block;margin:4px 2px;">📱 QR Code</a>
                                 `;
                             } else if (b.chargest === 3) {
                                 html += `
@@ -207,7 +209,8 @@
                                 html += `
                                     <a href="/select/?sid=${stationUname}&slot=${slot.slot_num}&rid=${b.id}">Need Charge</a><br>
                                     <a href="/booking-out/${b.id}/" onclick="return confirm('Cancel this booking?');">OUT</a><br>
-                                    <a href="/rebook/${b.id}/">Reschedule</a>
+                                    <a href="/rebook/${b.id}/">Reschedule</a><br>
+                                    <a href="/booking-qr/${b.id}/" style="background:linear-gradient(90deg,#00b09b,#28a745);color:#fff;padding:5px 12px;border-radius:6px;text-decoration:none;font-size:11px;font-weight:600;display:inline-block;margin-top:4px;">📱 View QR</a>
                                 `;
                             }
                             
