@@ -13,6 +13,7 @@ urlpatterns = [
     
     # Station Owner
     path('login2/', views.station_login, name='station_login'),
+    path('station-forgot-password/', views.station_forgot_password, name='station_forgot_password'),
     path('reg_station/', views.station_register, name='station_register'),
     path('home/', views.station_home, name='station_home'),
     path('view/<str:sid>/', views.station_view_slots, name='station_view'),

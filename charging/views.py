@@ -160,10 +160,6 @@ def station_login(request):
     if request.method == 'POST':
         uname = request.POST.get('uname')
         pwd = request.POST.get('pass')
-        # station = authenticate(request, username=uname, password=pwd)
-        # if station is not None and isinstance(station, EVStation):
-        #     request.session['station_uname'] = station.uname
-        #     return redirect('station_home')
         owner = EVStation.objects.filter(uname=uname, passw=pwd).first()
         if owner and owner.status == 1:
             request.session['station_owner'] = uname
@@ -175,6 +171,71 @@ def station_login(request):
         else:
             messages.error(request, "Invalid station credentials or not approved yet.")
     return render(request, 'login2.html')
+
+
+import random
+def station_forgot_password(request):
+    if request.method == 'POST':
+        step = request.POST.get('step', 'email')
+
+        if step == 'email':
+            identifier = request.POST.get('identifier')
+            station = EVStation.objects.filter(uname=identifier).first() or EVStation.objects.filter(email=identifier).first()
+            if station:
+                otp = str(random.randint(100000, 999999))
+                request.session['station_reset_otp'] = otp
+                request.session['station_reset_uname'] = station.uname
+                # Send OTP email
+                try:
+                    import threading
+                    from django.core.mail import send_mail
+                    def send_otp():
+                        send_mail(
+                            'EV Charge Hub - Password Reset OTP',
+                            f'Your OTP for password reset is: {otp}\nValid for 10 minutes.',
+                            settings.DEFAULT_FROM_EMAIL,
+                            [station.email],
+                            fail_silently=True,
+                        )
+                    threading.Thread(target=send_otp).start()
+                except:
+                    pass
+                messages.success(request, f"OTP sent to your registered email!")
+                return render(request, 'station_forgot_password.html', {'step': 'otp', 'identifier': station.uname})
+            else:
+                messages.error(request, "No station found with this username/email.")
+                return render(request, 'station_forgot_password.html', {'step': 'email'})
+
+        elif step == 'otp':
+            identifier = request.POST.get('identifier')
+            otp = request.POST.get('otp')
+            saved_otp = request.session.get('station_reset_otp')
+            if otp == saved_otp:
+                messages.success(request, "OTP verified! Set your new password.")
+                return render(request, 'station_forgot_password.html', {'step': 'reset', 'identifier': identifier})
+            else:
+                messages.error(request, "Invalid OTP. Try again.")
+                return render(request, 'station_forgot_password.html', {'step': 'otp', 'identifier': identifier})
+
+        elif step == 'reset':
+            identifier = request.POST.get('identifier')
+            new_password = request.POST.get('new_password')
+            confirm_password = request.POST.get('confirm_password')
+            if new_password != confirm_password:
+                messages.error(request, "Passwords do not match!")
+                return render(request, 'station_forgot_password.html', {'step': 'reset', 'identifier': identifier})
+            station = EVStation.objects.filter(uname=identifier).first()
+            if station:
+                station.passw = new_password
+                station.save()
+                request.session.pop('station_reset_otp', None)
+                request.session.pop('station_reset_uname', None)
+                messages.success(request, "Password reset successful! Please login.")
+                return redirect('station_login')
+            else:
+                messages.error(request, "Something went wrong. Try again.")
+
+    return render(request, 'station_forgot_password.html', {'step': 'email'})
 
 
 def station_register(request):
