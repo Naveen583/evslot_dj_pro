@@ -92,21 +92,39 @@
 		        </div>
           </div>
           <div class="col-md-8 block-9 mb-md-5">
-		  <h3>Vehicle Charging Cost</h3>
+		  <h3>Vehicle Charging Plan</h3>
 		  <span style="color:#FF0000">{{ msg }}</span>
             <form action="{% url 'select_plan' %}?sid={{sid}}&rid={{rid}}" method="POST" class="bg-light p-5 contact-form">{% csrf_token %}
+              
               <div class="form-group">
-                <input type="radio" name="plan" value="1"> Level 1 Charging Up to 2 miles, 30 mins (Rs. 100)
+                <label style="display:block;padding:15px;border:2px solid #ddd;border-radius:10px;cursor:pointer;margin-bottom:10px;" onclick="this.style.borderColor='#0072ff'">
+                  <input type="radio" name="plan" value="1" style="margin-right:10px;">
+                  <strong>🔌 AC Level 1 Charging</strong><br>
+                  <small style="color:#666;margin-left:25px;">Slow charging • Up to 2 miles range • 30 mins</small><br>
+                  <span style="margin-left:25px;color:#0072ff;font-weight:700;font-size:18px;">₹100</span>
+                </label>
               </div>
+
               <div class="form-group">
-                <input type="radio" name="plan" value="2"> Level 2 Charging Up to 10 miles, 30 mins (Rs. 200)
+                <label style="display:block;padding:15px;border:2px solid #ddd;border-radius:10px;cursor:pointer;margin-bottom:10px;" onclick="this.style.borderColor='#0072ff'">
+                  <input type="radio" name="plan" value="2" style="margin-right:10px;">
+                  <strong>⚡ AC Level 2 Charging</strong><br>
+                  <small style="color:#666;margin-left:25px;">Fast charging • Up to 10 miles range • 30 mins</small><br>
+                  <span style="margin-left:25px;color:#0072ff;font-weight:700;font-size:18px;">₹200</span>
+                </label>
               </div>
-			   <div class="form-group">
-                <input type="radio" name="plan" value="3"> DC Fast Charging Up to 90 miles, 30 mins (Rs. 300)
+
+              <div class="form-group">
+                <label style="display:block;padding:15px;border:2px solid #ddd;border-radius:10px;cursor:pointer;margin-bottom:10px;" onclick="this.style.borderColor='#0072ff'">
+                  <input type="radio" name="plan" value="3" style="margin-right:10px;">
+                  <strong>🚀 DC Fast Charging</strong><br>
+                  <small style="color:#666;margin-left:25px;">Ultra-fast charging • Up to 90 miles range • 30 mins</small><br>
+                  <span style="margin-left:25px;color:#0072ff;font-weight:700;font-size:18px;">₹300</span>
+                </label>
               </div>
               
               <div class="form-group">
-                <input type="submit" value="Submit" class="btn btn-primary py-3 px-5">
+                <input type="submit" value="Confirm Plan →" class="btn btn-primary py-3 px-5">
               </div>
             </form>
        

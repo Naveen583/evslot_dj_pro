@@ -822,18 +822,22 @@ def book_slot(request):
         dy = delta.days
 
         x = 0
-        # Check for concurrent bookings — same slot same time
-        concurrent_bookings = EVBooking.objects.filter(station__uname=sid, rdate=bdate, status=1)
-        for ts2 in concurrent_bookings:
-            th2 = ts2.rtime.split(":") if ts2.rtime else []
-            if th2 and th2[0] == t1:
-                x += 1
-        # Also check if this exact slot is already booked at overlapping time
+        # STRONG double booking check - same slot, overlapping time
         slot_conflict = EVBooking.objects.filter(
             station__uname=sid, slot=slot, rdate=bdate, status=1
-        ).exclude(btime2__lte=btime1).exclude(btime1__gte=btime2).exists()
+        ).exclude(chargest=3).exclude(btime2__lte=btime1).exclude(btime1__gte=btime2).exists()
+        
         if slot_conflict:
-            x = 99  # Force fail — slot already booked at this time
+            messages.error(request, f"⚠️ Slot {slot} is already booked during {btime1} - {btime2}. Please choose a different time or slot.")
+            return redirect('slot', sid=sid)
+
+        # Check station capacity - max 1 booking per slot at same time
+        concurrent_bookings = EVBooking.objects.filter(
+            station__uname=sid, rdate=bdate, status=1, slot=slot
+        ).exclude(chargest=3).exclude(btime2__lte=btime1).exclude(btime1__gte=btime2).count()
+        
+        if concurrent_bookings >= 1:
+            x = 99
 
         if x < 2 and dy >= 0:
             cimage = "evch.jpg"
