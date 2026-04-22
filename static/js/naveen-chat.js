@@ -14,7 +14,7 @@ const responses = [
   { keys: ['wait','waiting','time pass','bored'], reply: "While charging, visit our <strong>Wait Room</strong>! 🎮<br>🐍 Play Snake game<br>💡 Learn EV facts<br>📰 Read TN EV news<br>Click 'Wait Room' button on your slot!" },
   { keys: ['register','signup','new user','create account'], reply: "To register:<br>Click <strong>User → Register</strong> on homepage<br>Fill name, address, mobile, email, username & password<br>You'll get a welcome email! 📧" },
   { keys: ['forgot','password','reset'], reply: "Forgot password? No worries!<br>Go to Login page → Click <strong>'Forgot Password?'</strong><br>Enter your email → Get reset link 📧" },
-  { keys: ['contact','support','help','problem','issue'], reply: "Need help? Contact us:<br>📧 Email: evcharge@info.com<br>📱 Phone: +91 93844 32004<br>Or describe your issue here and I'll try to help! 😊" },
+  { keys: ['contact','support','help','problem','issue','customer','care'], reply: "Need help? Contact us:<br>📧 Email: evcharge@info.com<br>📱 Customer Care: <strong><a href='tel:6379241960' style='color:#00c6ff;'>+91 63792 41960</a></strong><br>Or describe your issue here and I'll try to help! 😊" },
   { keys: ['active','online','status'], reply: "Station status is shown in real-time on the Station page! 🟢 Green = Active, 🔴 Red = Inactive" },
   { keys: ['ev','electric','vehicle','car'], reply: "EV Charge Hub supports all electric vehicles — 2-wheelers, 4-wheelers, and commercial EVs! ⚡🚗" },
   { keys: ['thank','thanks','thank you','thx'], reply: "You're welcome! 😊 Happy charging! ⚡ Is there anything else I can help you with?" },
@@ -22,7 +22,7 @@ const responses = [
   { keys: ['naveen','who are you','your name'], reply: "I'm <strong>Naveen</strong> 🤖, the AI assistant for EV Charge Hub! I'm here to help you with bookings, payments, stations, and more. Ask me anything!" },
 ];
 
-const defaultReply = "I'm not sure about that 🤔 But I can help you with:<br>• Slot booking<br>• Payment options<br>• Station locations<br>• Tariff rates<br>• Account issues<br><br>Type your question or call us at <strong>+91 93844 32004</strong> 📞";
+const defaultReply = "I'm not sure about that 🤔 But I can help you with:<br>• Slot booking<br>• Payment options<br>• Station locations<br>• Tariff rates<br>• Account issues<br><br>Type your question or call us at <strong><a href='tel:6379241960' style='color:#00c6ff;'>+91 63792 41960</a></strong> 📞";
 
 function getReply(msg) {
   const lower = msg.toLowerCase();
