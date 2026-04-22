@@ -1031,13 +1031,19 @@ def select_plan(request):
 
     booking = get_object_or_404(EVBooking, id=rid)
 
-    # Check if next person already booked this slot at the same end time
+    # If charging complete, mark old booking as done (status=3) before allowing re-charge
+    if booking.chargest == 3 and booking.status == 1:
+        booking.status = 3
+        booking.save(update_fields=['status'])
+
+    # Check if next person already booked this slot at overlapping time
+    now = timezone.localtime()
+    now_str = now.strftime("%H:%M")
     next_booking = EVBooking.objects.filter(
         station=booking.station,
         slot=booking.slot,
         rdate=booking.rdate,
         status=1,
-        btime1=booking.btime2  # next booking starts exactly when this one ends
     ).exclude(id=booking.id).first()
 
     if next_booking:
@@ -1062,14 +1068,12 @@ def select_plan(request):
             booking.amount = 300
 
         booking.chargest = 1
-        booking.save(update_fields=['plan', 'amount', 'chargest'])
+        booking.status = 1
+        booking.save(update_fields=['plan', 'amount', 'chargest', 'status'])
 
         request.session['booking_id'] = booking.id
+        return redirect('slot', sid=sid)
 
-        # If charge2 needs rid, pass it
-        return redirect('slot', sid=sid)  # adjust to your charge2 URL pattern
-
-    # Initial GET: show plan selection page
     return render(request, 'select.html', {'sid': sid, 'rid': rid, 'booking': booking})
 
 
@@ -1849,6 +1853,6 @@ def charging_wait(request, rid):
     booking = get_object_or_404(EVBooking, id=rid)
     # Block access if charging already completed
     if booking.chargest == 3:
-        messages.error(request, "Charging completed! Please proceed to payment.")
-        return redirect('slot', sid=booking.station.uname)
+        messages.success(request, "Charging completed! Please proceed to payment.")
+        return redirect('payment', rid=booking.id)
     return render(request, 'charging_wait.html', {'booking': booking})
