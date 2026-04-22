@@ -78,14 +78,18 @@
         </div>
       </div>
 
-      <!-- Flappy EV Game -->
+      <!-- EV Car Racing Game -->
       <div class="card-dark mb-3">
-        <h6 style="color:#4a9eff;font-weight:700;margin-bottom:8px;">🚗 Flappy EV Game</h6>
-        <p style="color:#8892a4;font-size:12px;">Tap / Press Space to fly! Avoid the barriers!</p>
+        <h6 style="color:#4a9eff;font-weight:700;margin-bottom:8px;">🏎️ EV Car Racing</h6>
+        <p style="color:#8892a4;font-size:12px;">Use ← → Arrow keys or tap Left/Right to dodge traffic!</p>
         <div style="text-align:center;">
-          <div style="font-size:13px;color:#8892a4;margin-bottom:6px;">Score: <span id="flappy-score" style="color:#00c6ff;font-weight:700;">0</span> &nbsp; Best: <span id="flappy-best" style="color:#fbbf24;font-weight:700;">0</span></div>
-          <canvas id="flappy-canvas" width="280" height="220" style="background:#0a1628;border-radius:8px;border:1px solid #1e2d40;display:block;margin:0 auto;cursor:pointer;"></canvas>
-          <p style="color:#8892a4;font-size:11px;margin-top:6px;">Tap canvas or press Space to flap ⚡</p>
+          <div style="font-size:13px;color:#8892a4;margin-bottom:6px;">Score: <span id="race-score" style="color:#00c6ff;font-weight:700;">0</span> &nbsp; Best: <span id="race-best" style="color:#fbbf24;font-weight:700;">0</span> &nbsp; Level: <span id="race-level" style="color:#34d399;font-weight:700;">1</span></div>
+          <canvas id="race-canvas" width="280" height="380" style="background:#0a1628;border-radius:12px;border:2px solid #0072ff;display:block;margin:0 auto;cursor:pointer;box-shadow:0 0 20px rgba(0,114,255,0.3);"></canvas>
+          <div style="margin-top:8px;display:flex;justify-content:center;gap:12px;">
+            <button id="btn-left" style="background:linear-gradient(135deg,#0072ff,#7b2ff7);border:none;color:#fff;padding:10px 24px;border-radius:10px;font-size:18px;cursor:pointer;touch-action:manipulation;">◀</button>
+            <button id="btn-right" style="background:linear-gradient(135deg,#0072ff,#7b2ff7);border:none;color:#fff;padding:10px 24px;border-radius:10px;font-size:18px;cursor:pointer;touch-action:manipulation;">▶</button>
+          </div>
+          <p style="color:#8892a4;font-size:11px;margin-top:6px;">Arrow keys or tap buttons to move ⚡</p>
         </div>
       </div>
 
@@ -107,98 +111,201 @@
 <div class="gbar"></div>
 
 <script>
-// Flappy EV Game
+// EV Car Racing Game
 (function(){
-  const canvas = document.getElementById('flappy-canvas');
+  const canvas = document.getElementById('race-canvas');
   const ctx = canvas.getContext('2d');
-  const W = 280, H = 220;
-  let bird, pipes, score, best=0, gameState='idle', raf;
+  const W = 280, H = 380;
+  const LANES = [50, 110, 170, 230];
+  let car, obstacles, score, best=0, level, speed, gameState='idle', raf, frameCount;
 
   function reset(){
-    bird = {x:60, y:H/2, vy:0, r:14};
-    pipes = [];
-    score = 0;
+    car = {lane:1, x:LANES[1], y:H-80, w:36, h:56, moving:false, targetX:LANES[1]};
+    obstacles = [];
+    score = 0; level = 1; speed = 3; frameCount = 0;
     gameState = 'running';
-    document.getElementById('flappy-score').textContent = 0;
+    document.getElementById('race-score').textContent = 0;
+    document.getElementById('race-level').textContent = 1;
   }
 
-  function flap(){ if(gameState==='running') bird.vy = -5; else if(gameState==='idle'||gameState==='dead') reset(); }
+  function moveLeft(){ if(gameState==='running' && car.lane>0){ car.lane--; car.targetX=LANES[car.lane]; } else if(gameState!=='running') reset(); }
+  function moveRight(){ if(gameState==='running' && car.lane<3){ car.lane++; car.targetX=LANES[car.lane]; } else if(gameState!=='running') reset(); }
 
-  canvas.addEventListener('click', flap);
-  document.addEventListener('keydown', e=>{ if(e.code==='Space'){ e.preventDefault(); flap(); }});
+  document.addEventListener('keydown', e=>{
+    if(e.key==='ArrowLeft'){ e.preventDefault(); moveLeft(); }
+    if(e.key==='ArrowRight'){ e.preventDefault(); moveRight(); }
+  });
+  document.getElementById('btn-left').addEventListener('click', moveLeft);
+  document.getElementById('btn-right').addEventListener('click', moveRight);
+  canvas.addEventListener('click', ()=>{ if(gameState!=='running') reset(); });
 
-  let frameCount = 0;
+  // Road markings
+  let roadOffset = 0;
+
+  function drawRoad(){
+    // Road background
+    const roadGrad = ctx.createLinearGradient(0,0,W,0);
+    roadGrad.addColorStop(0,'#0a1628');
+    roadGrad.addColorStop(0.5,'#0d1f35');
+    roadGrad.addColorStop(1,'#0a1628');
+    ctx.fillStyle = roadGrad;
+    ctx.fillRect(0,0,W,H);
+
+    // Road edges glow
+    ctx.strokeStyle='#0072ff'; ctx.lineWidth=3; ctx.shadowColor='#0072ff'; ctx.shadowBlur=10;
+    ctx.beginPath(); ctx.moveTo(20,0); ctx.lineTo(20,H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(260,0); ctx.lineTo(260,H); ctx.stroke();
+    ctx.shadowBlur=0;
+
+    // Lane dividers
+    ctx.setLineDash([30,20]);
+    ctx.strokeStyle='#1e3a5f'; ctx.lineWidth=2;
+    [80,140,200].forEach(x=>{
+      ctx.beginPath(); ctx.moveTo(x, roadOffset%50-50); ctx.lineTo(x, H); ctx.stroke();
+    });
+    ctx.setLineDash([]);
+
+    // Speed lines (motion blur effect)
+    ctx.strokeStyle='rgba(0,198,255,0.1)'; ctx.lineWidth=1;
+    for(let i=0;i<5;i++){
+      const x = 25 + Math.random()*230;
+      const y = (roadOffset*2 + i*80) % H;
+      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,y+20); ctx.stroke();
+    }
+  }
+
+  function drawCar(x, y, color1, color2, isPlayer){
+    ctx.save();
+    // Car body
+    const grad = ctx.createLinearGradient(x-18,y,x+18,y);
+    grad.addColorStop(0, color1);
+    grad.addColorStop(1, color2);
+    ctx.fillStyle = grad;
+    ctx.shadowColor = isPlayer ? '#00c6ff' : '#ff4444';
+    ctx.shadowBlur = isPlayer ? 15 : 8;
+    // Main body
+    ctx.beginPath();
+    ctx.roundRect(x-16, y-24, 32, 48, 6);
+    ctx.fill();
+    // Roof
+    ctx.fillStyle = isPlayer ? '#0a1628' : '#1a0a0a';
+    ctx.beginPath();
+    ctx.roundRect(x-10, y-18, 20, 22, 4);
+    ctx.fill();
+    // Windshield
+    ctx.fillStyle = isPlayer ? 'rgba(0,198,255,0.4)' : 'rgba(255,100,100,0.3)';
+    ctx.beginPath();
+    ctx.roundRect(x-8, y-16, 16, 10, 2);
+    ctx.fill();
+    // Wheels
+    ctx.fillStyle = '#1e2d40';
+    ctx.shadowBlur = 0;
+    [[x-18,y-14],[x+14,y-14],[x-18,y+10],[x+14,y+10]].forEach(([wx,wy])=>{
+      ctx.beginPath(); ctx.ellipse(wx,wy,5,7,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#4a9eff'; ctx.beginPath(); ctx.ellipse(wx,wy,2,3,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#1e2d40';
+    });
+    // Headlights/taillights
+    if(isPlayer){
+      ctx.fillStyle='rgba(255,255,100,0.9)';
+      ctx.beginPath(); ctx.ellipse(x-10,y-24,4,3,0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x+10,y-24,4,3,0,0,Math.PI*2); ctx.fill();
+      // EV badge
+      ctx.fillStyle='#00c6ff'; ctx.font='bold 8px Arial'; ctx.textAlign='center';
+      ctx.fillText('EV', x, y+28);
+    } else {
+      ctx.fillStyle='rgba(255,50,50,0.9)';
+      ctx.beginPath(); ctx.ellipse(x-10,y+24,4,3,0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x+10,y+24,4,3,0,0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  const obstacleColors = [
+    ['#ff4444','#cc0000'],['#ff8800','#cc5500'],['#aa00ff','#7700cc'],
+    ['#00aa44','#007733'],['#ffcc00','#cc9900']
+  ];
+
   function loop(){
     raf = requestAnimationFrame(loop);
-    ctx.fillStyle='#0a1628'; ctx.fillRect(0,0,W,H);
+    roadOffset += speed * 0.5;
+    drawRoad();
 
     if(gameState==='idle'){
-      ctx.fillStyle='#00c6ff'; ctx.font='bold 16px Poppins'; ctx.textAlign='center';
-      ctx.fillText('⚡ Flappy EV', W/2, H/2-20);
+      ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,H/2-60,W,120);
+      ctx.fillStyle='#00c6ff'; ctx.font='bold 20px Poppins'; ctx.textAlign='center';
+      ctx.fillText('🏎️ EV RACING', W/2, H/2-25);
       ctx.fillStyle='#8892a4'; ctx.font='13px Poppins';
-      ctx.fillText('Tap to Start!', W/2, H/2+10);
+      ctx.fillText('Tap or press ← → to start!', W/2, H/2+5);
+      ctx.fillStyle='#4a9eff'; ctx.font='11px Poppins';
+      ctx.fillText('Dodge traffic, earn points!', W/2, H/2+28);
       return;
     }
 
     frameCount++;
-    // Spawn pipes
-    if(frameCount % 90 === 0){
-      const gap = 65, top = 30 + Math.random()*(H-gap-60);
-      pipes.push({x:W, top, bot:top+gap, scored:false});
+
+    // Level up
+    if(score > 0 && score % 10 === 0 && speed < 10){
+      speed = 3 + Math.floor(score/10) * 0.8;
+      level = Math.floor(score/10) + 1;
+      document.getElementById('race-level').textContent = level;
     }
 
-    // Move pipes
-    pipes.forEach(p=>p.x-=2.5);
-    pipes = pipes.filter(p=>p.x>-40);
+    // Spawn obstacles
+    const spawnRate = Math.max(40, 80 - score*2);
+    if(frameCount % spawnRate === 0){
+      const lane = Math.floor(Math.random()*4);
+      const colorPair = obstacleColors[Math.floor(Math.random()*obstacleColors.length)];
+      obstacles.push({x:LANES[lane], y:-60, lane, color1:colorPair[0], color2:colorPair[1]});
+    }
 
-    // Score
-    pipes.forEach(p=>{
-      if(!p.scored && p.x+20 < bird.x){
-        p.scored=true; score++;
-        document.getElementById('flappy-score').textContent=score;
-        if(score>best){ best=score; document.getElementById('flappy-best').textContent=best; }
-      }
+    // Move obstacles
+    obstacles.forEach(o=>o.y+=speed);
+    obstacles = obstacles.filter(o=>{
+      if(o.y > H+60){ score++; document.getElementById('race-score').textContent=score; return false; }
+      return true;
     });
 
-    // Draw pipes
-    pipes.forEach(p=>{
-      const grad = ctx.createLinearGradient(p.x,0,p.x+20,0);
-      grad.addColorStop(0,'#0072ff'); grad.addColorStop(1,'#7b2ff7');
-      ctx.fillStyle=grad;
-      ctx.fillRect(p.x,0,20,p.top);
-      ctx.fillRect(p.x,p.bot,20,H-p.bot);
-      // Pipe caps
-      ctx.fillStyle='#00c6ff';
-      ctx.fillRect(p.x-3,p.top-8,26,8);
-      ctx.fillRect(p.x-3,p.bot,26,8);
+    // Draw obstacles
+    obstacles.forEach(o=> drawCar(o.x, o.y, o.color1, o.color2, false));
+
+    // Smooth car movement
+    car.x += (car.targetX - car.x) * 0.2;
+
+    // Draw player car
+    drawCar(car.x, car.y, '#0072ff', '#00c6ff', true);
+
+    // Exhaust particles
+    if(frameCount%3===0){
+      ctx.fillStyle='rgba(0,198,255,0.3)';
+      ctx.beginPath();
+      ctx.arc(car.x + (Math.random()-0.5)*10, car.y+28, Math.random()*4+1, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    // HUD
+    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.fillRect(0,0,W,28);
+    ctx.fillStyle='#00c6ff'; ctx.font='bold 12px Poppins'; ctx.textAlign='left';
+    ctx.fillText(`⚡ Score: ${score}`, 8, 18);
+    ctx.fillStyle='#fbbf24'; ctx.textAlign='right';
+    ctx.fillText(`Lv.${level} 🏆${best}`, W-8, 18);
+
+    // Collision detection
+    const hit = obstacles.some(o=>{
+      return Math.abs(o.x - car.x) < 28 && Math.abs(o.y - car.y) < 44;
     });
 
-    // Bird physics
-    bird.vy += 0.28;
-    bird.y += bird.vy;
-
-    // Draw bird (EV car emoji style)
-    ctx.save();
-    ctx.translate(bird.x, bird.y);
-    ctx.rotate(Math.min(Math.max(bird.vy*0.05,-0.4),0.4));
-    ctx.font='22px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('🚗', 0, 0);
-    ctx.restore();
-
-    // Ground
-    ctx.fillStyle='#1e2d40'; ctx.fillRect(0,H-10,W,10);
-
-    // Collision
-    const dead = bird.y-bird.r < 0 || bird.y+bird.r > H-10 ||
-      pipes.some(p=> bird.x+bird.r>p.x && bird.x-bird.r<p.x+20 && (bird.y-bird.r<p.top || bird.y+bird.r>p.bot));
-
-    if(dead){
+    if(hit){
       gameState='dead';
-      ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(0,70,W,80);
-      ctx.fillStyle='#f87171'; ctx.font='bold 16px Poppins'; ctx.textAlign='center';
-      ctx.fillText('💥 Game Over! Score: '+score, W/2, 105);
+      if(score>best){ best=score; document.getElementById('race-best').textContent=best; }
+      // Explosion effect
+      ctx.fillStyle='rgba(255,100,0,0.6)'; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='#fff'; ctx.font='bold 22px Poppins'; ctx.textAlign='center';
+      ctx.fillText('💥 CRASH!', W/2, H/2-20);
+      ctx.fillStyle='#fbbf24'; ctx.font='16px Poppins';
+      ctx.fillText(`Score: ${score}`, W/2, H/2+15);
       ctx.fillStyle='#8892a4'; ctx.font='12px Poppins';
-      ctx.fillText('Tap to restart', W/2, 128);
+      ctx.fillText('Tap to restart', W/2, H/2+45);
       cancelAnimationFrame(raf);
     }
   }
