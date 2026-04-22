@@ -92,41 +92,93 @@
 		        </div>
           </div>
           <div class="col-md-8 block-9 mb-md-5">
-		  <h3>Vehicle Charging Plan</h3>
+		  <h3 style="color:#333;font-weight:800;margin-bottom:20px;">⚡ Select Charging Plan</h3>
 		  <span style="color:#FF0000">{{ msg }}</span>
-            <form action="{% url 'select_plan' %}?sid={{sid}}&rid={{rid}}" method="POST" class="bg-light p-5 contact-form">{% csrf_token %}
+            <form action="{% url 'select_plan' %}?sid={{sid}}&rid={{rid}}" method="POST">{% csrf_token %}
               
-              <div class="form-group">
-                <label style="display:block;padding:15px;border:2px solid #ddd;border-radius:10px;cursor:pointer;margin-bottom:10px;" onclick="this.style.borderColor='#0072ff'">
-                  <input type="radio" name="plan" value="1" style="margin-right:10px;">
-                  <strong>🔌 AC Level 1 Charging</strong><br>
-                  <small style="color:#666;margin-left:25px;">Slow charging • Up to 2 miles range • 30 mins</small><br>
-                  <span style="margin-left:25px;color:#0072ff;font-weight:700;font-size:18px;">₹100</span>
-                </label>
+              <!-- Plan 1 -->
+              <div class="plan-card" onclick="selectPlan(this, '1')" style="background:linear-gradient(135deg,#e8f4fd,#d1ecf1);border:3px solid #bee5eb;border-radius:16px;padding:20px;margin-bottom:16px;cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden;">
+                <div style="position:absolute;top:0;right:0;background:#17a2b8;color:#fff;padding:6px 14px;border-radius:0 16px 0 16px;font-size:12px;font-weight:700;">BASIC</div>
+                <input type="radio" name="plan" value="1" id="plan1" style="display:none;">
+                <div style="display:flex;align-items:center;gap:16px;">
+                  <div style="font-size:48px;">🔌</div>
+                  <div>
+                    <h5 style="color:#0c5460;margin:0;font-weight:800;">AC Level 1 Charging</h5>
+                    <p style="color:#0c5460;margin:4px 0;font-size:13px;">Slow & Steady • Up to 2 miles range • 30 mins</p>
+                    <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+                      <span style="background:#17a2b8;color:#fff;padding:6px 16px;border-radius:20px;font-size:20px;font-weight:800;">₹100</span>
+                      <span style="color:#0c5460;font-size:12px;">per session</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="plan-check" style="display:none;position:absolute;bottom:10px;right:14px;font-size:24px;">✅</div>
               </div>
 
-              <div class="form-group">
-                <label style="display:block;padding:15px;border:2px solid #ddd;border-radius:10px;cursor:pointer;margin-bottom:10px;" onclick="this.style.borderColor='#0072ff'">
-                  <input type="radio" name="plan" value="2" style="margin-right:10px;">
-                  <strong>⚡ AC Level 2 Charging</strong><br>
-                  <small style="color:#666;margin-left:25px;">Fast charging • Up to 10 miles range • 30 mins</small><br>
-                  <span style="margin-left:25px;color:#0072ff;font-weight:700;font-size:18px;">₹200</span>
-                </label>
+              <!-- Plan 2 -->
+              <div class="plan-card" onclick="selectPlan(this, '2')" style="background:linear-gradient(135deg,#fff3cd,#ffeeba);border:3px solid #ffc107;border-radius:16px;padding:20px;margin-bottom:16px;cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden;">
+                <div style="position:absolute;top:0;right:0;background:#ffc107;color:#333;padding:6px 14px;border-radius:0 16px 0 16px;font-size:12px;font-weight:700;">POPULAR ⭐</div>
+                <input type="radio" name="plan" value="2" id="plan2" style="display:none;">
+                <div style="display:flex;align-items:center;gap:16px;">
+                  <div style="font-size:48px;">⚡</div>
+                  <div>
+                    <h5 style="color:#856404;margin:0;font-weight:800;">AC Level 2 Charging</h5>
+                    <p style="color:#856404;margin:4px 0;font-size:13px;">Fast Charging • Up to 10 miles range • 30 mins</p>
+                    <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+                      <span style="background:#ffc107;color:#333;padding:6px 16px;border-radius:20px;font-size:20px;font-weight:800;">₹200</span>
+                      <span style="color:#856404;font-size:12px;">per session</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="plan-check" style="display:none;position:absolute;bottom:10px;right:14px;font-size:24px;">✅</div>
               </div>
 
-              <div class="form-group">
-                <label style="display:block;padding:15px;border:2px solid #ddd;border-radius:10px;cursor:pointer;margin-bottom:10px;" onclick="this.style.borderColor='#0072ff'">
-                  <input type="radio" name="plan" value="3" style="margin-right:10px;">
-                  <strong>🚀 DC Fast Charging</strong><br>
-                  <small style="color:#666;margin-left:25px;">Ultra-fast charging • Up to 90 miles range • 30 mins</small><br>
-                  <span style="margin-left:25px;color:#0072ff;font-weight:700;font-size:18px;">₹300</span>
-                </label>
+              <!-- Plan 3 -->
+              <div class="plan-card" onclick="selectPlan(this, '3')" style="background:linear-gradient(135deg,#f8d7da,#f5c6cb);border:3px solid #f5c6cb;border-radius:16px;padding:20px;margin-bottom:16px;cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden;">
+                <div style="position:absolute;top:0;right:0;background:#dc3545;color:#fff;padding:6px 14px;border-radius:0 16px 0 16px;font-size:12px;font-weight:700;">FASTEST 🚀</div>
+                <input type="radio" name="plan" value="3" id="plan3" style="display:none;">
+                <div style="display:flex;align-items:center;gap:16px;">
+                  <div style="font-size:48px;">🚀</div>
+                  <div>
+                    <h5 style="color:#721c24;margin:0;font-weight:800;">DC Fast Charging</h5>
+                    <p style="color:#721c24;margin:4px 0;font-size:13px;">Ultra-Fast • Up to 90 miles range • 30 mins</p>
+                    <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+                      <span style="background:#dc3545;color:#fff;padding:6px 16px;border-radius:20px;font-size:20px;font-weight:800;">₹300</span>
+                      <span style="color:#721c24;font-size:12px;">per session</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="plan-check" style="display:none;position:absolute;bottom:10px;right:14px;font-size:24px;">✅</div>
               </div>
               
-              <div class="form-group">
-                <input type="submit" value="Confirm Plan →" class="btn btn-primary py-3 px-5">
+              <div class="form-group" style="margin-top:20px;">
+                <button type="submit" id="submit-btn" disabled style="background:linear-gradient(135deg,#6c757d,#495057);color:#fff;border:none;padding:14px 40px;border-radius:30px;font-size:16px;font-weight:700;cursor:not-allowed;transition:all 0.3s;width:100%;">
+                  Select a Plan to Continue →
+                </button>
               </div>
             </form>
+
+            <script>
+            function selectPlan(card, value) {
+              // Reset all cards
+              document.querySelectorAll('.plan-card').forEach(c => {
+                c.style.transform = 'scale(1)';
+                c.style.boxShadow = 'none';
+                c.querySelector('.plan-check').style.display = 'none';
+              });
+              // Highlight selected
+              card.style.transform = 'scale(1.02)';
+              card.style.boxShadow = '0 8px 25px rgba(0,0,0,0.2)';
+              card.querySelector('.plan-check').style.display = 'block';
+              // Set radio
+              document.getElementById('plan'+value).checked = true;
+              // Enable button
+              const btn = document.getElementById('submit-btn');
+              btn.disabled = false;
+              btn.style.background = 'linear-gradient(135deg,#0072ff,#7b2ff7)';
+              btn.style.cursor = 'pointer';
+              btn.textContent = '✅ Confirm Plan →';
+            }
+            </script>
        
           </div>
         </div>
