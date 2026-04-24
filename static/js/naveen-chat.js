@@ -58,10 +58,6 @@ function getReply(msg) {
   return defaultReply[lang];
 }
 
-  }
-  return defaultReply[lang] || defaultReply['en'];
-}
-
 // Build UI
 const style = document.createElement('style');
 style.textContent = `
@@ -208,3 +204,4 @@ document.getElementById('naveen-send').onclick = sendMsg;
 input.addEventListener('keydown', e => { if (e.key === 'Enter') sendMsg(); });
 
 })();
+
