@@ -180,8 +180,8 @@ btn.onclick = () => {
   btn.innerHTML = opened ? '✕' : '💬';
   if (opened && msgs.children.length === 0) {
     const greeting = lang === 'ta' 
-      ? "வணக்கம்! 👋 நான் <strong>நவீன்</strong>, உங்கள் EV Charge Hub உதவியாளர்.<br>எப்படி உதவலாம்?"
-      : "Hi! 👋 I'm <strong>Naveen</strong>, your EV Charge Hub assistant.<br>How can I help you today?";
+      ? "வணக்கம்! 👋 நான் <strong>நவீன்</strong>. EV Charge Hub-ல உங்களுக்கு உதவ இங்கே இருக்கேன்!<br><br>என்னை கேளுங்க - booking, payment, station எதுவும் சொல்லுங்க! 😊"
+      : "Hi! 👋 I'm <strong>Naveen</strong>. I'm here to help you with EV Charge Hub!<br><br>Ask me anything about booking, payment, stations, or any issue! 😊";
     setTimeout(() => addMsg(greeting, 'bot'), 400);
   }
 };

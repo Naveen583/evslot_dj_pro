@@ -104,9 +104,45 @@
     {% if booking.chargest == 2 %}
     <a href="{% url 'charging_wait' booking.id %}" class="btn-wait">🎮 Wait Room</a>
     {% endif %}
+    <br><br>
+    <button onclick="printReceipt()" style="background:linear-gradient(90deg,#ff8c00,#ff4500);color:#fff;border:none;padding:10px 24px;border-radius:25px;font-weight:600;font-size:13px;cursor:pointer;margin:4px;">🖨️ Print Receipt</button>
+    <a href="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=EV+Charge+Hub%0ABooking+ID%3A+{{ booking.id }}%0AStation%3A+{{ booking.station.name }}%0ASlot%3A+{{ booking.slot }}%0ADate%3A+{{ booking.rdate }}%0ATime%3A+{{ booking.btime1 }}+-+{{ booking.btime2 }}%0AVehicle%3A+{{ booking.carno }}" download="booking-qr-{{ booking.id }}.png" style="background:linear-gradient(90deg,#00b09b,#28a745);color:#fff;padding:10px 24px;border-radius:25px;font-weight:600;font-size:13px;text-decoration:none;display:inline-block;margin:4px;">📥 Save QR</a>
   </div>
 </div>
 <script>
+function printReceipt() {
+  const printContent = `
+    <html><head><title>EV Charge Hub - Booking Receipt</title>
+    <style>
+      body{font-family:Arial,sans-serif;padding:20px;color:#333;}
+      h2{color:#0072ff;text-align:center;}
+      table{width:100%;border-collapse:collapse;margin-top:20px;}
+      td{padding:10px;border-bottom:1px solid #ddd;}
+      td:first-child{font-weight:bold;color:#666;width:40%;}
+      .footer{text-align:center;margin-top:30px;color:#888;font-size:12px;}
+    </style></head>
+    <body>
+      <h2>⚡ EV CHARGE HUB</h2>
+      <p style="text-align:center;color:#666;">Booking Receipt</p>
+      <table>
+        <tr><td>Booking ID</td><td>#{{ booking.id }}</td></tr>
+        <tr><td>Station</td><td>{{ booking.station.name }}</td></tr>
+        <tr><td>Slot No.</td><td>{{ booking.slot }}</td></tr>
+        <tr><td>Vehicle No.</td><td>{{ booking.carno }}</td></tr>
+        <tr><td>Date</td><td>{{ booking.rdate }}</td></tr>
+        <tr><td>Time</td><td>{{ booking.btime1 }} - {{ booking.btime2 }}</td></tr>
+        <tr><td>Amount</td><td>₹{{ booking.amount }}</td></tr>
+        <tr><td>Status</td><td>Confirmed ✅</td></tr>
+      </table>
+      <div class="footer">Thank you for choosing EV Charge Hub! 🌱<br>evslot.onrender.com</div>
+    </body></html>
+  `;
+  const w = window.open('', '_blank');
+  w.document.write(printContent);
+  w.document.close();
+  w.print();
+}
+
 // Auto redirect to slot page after 8 seconds
 let count = 8;
 const counter = document.getElementById('redir-count');
@@ -119,5 +155,6 @@ const timer = setInterval(() => {
   }
 }, 1000);
 </script>
-<script src="/static/js/naveen-chat.js"></script></body>
+<script src="/static/js/lang-toggle.js"></script><script src="/static/js/naveen-chat.js"></script></body>
 </html>
+
