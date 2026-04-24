@@ -256,4 +256,4 @@
   });
 
   document.body.appendChild(langBtn);
-})();
+})(); 
