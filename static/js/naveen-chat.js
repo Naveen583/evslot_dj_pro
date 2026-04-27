@@ -2,31 +2,31 @@
 (function() {
 
 const responses = [
-  { keys: ['hi','hello','hey','vanakkam','hai','good morning','good evening'], reply: "Hi there! 👋 I'm <strong>Naveen</strong>, your EV Charge Hub assistant. How can I help you today?" },
-  { keys: ['how are you','how r u'], reply: "I'm fully charged and ready to help! ⚡ What can I do for you?" },
-  { keys: ['book','slot','booking','how to book'], reply: "To book a slot:<br>1. Login → Station → Select Station<br>2. Choose an available slot<br>3. Enter vehicle no & time<br>4. Confirm booking ✅<br>You'll get a QR code instantly!" },
-  { keys: ['payment','pay','upi','razorpay','card','how to pay'], reply: "We support multiple payment options:<br>📱 <strong>UPI</strong> (GPay, PhonePe, Paytm)<br>💳 <strong>Cards</strong> (Debit/Credit)<br>🏦 <strong>NetBanking</strong><br>💵 <strong>Cash</strong> at station" },
-  { keys: ['qr','qr code','ticket'], reply: "After booking, you'll get a <strong>QR code ticket</strong> 🎫<br>Show it at the charging station. It's also sent to your email!" },
-  { keys: ['tariff','price','cost','rate','how much','charges'], reply: "Our charging rates:<br>🔌 AC Level 1: <strong>₹100</strong>/30 mins<br>⚡ AC Level 2: <strong>₹200</strong>/30 mins<br>🚀 DC Fast: <strong>₹300</strong>/30 mins<br>🅿️ Parking: <strong>Free!</strong>" },
-  { keys: ['station','location','where','nearby','find','which station'], reply: "We have EV stations across Tamil Nadu:<br>📍 Perambalur (2 stations)<br>📍 Chennai<br>📍 Coimbatore<br>📍 Madurai<br>📍 Trichy<br>Use the <strong>Station</strong> page to find nearest one!" },
-  { keys: ['cancel','cancellation','cancel booking'], reply: "To cancel a booking:<br>Go to Station → Your Slot → Click <strong>OUT</strong><br>⚠️ Cancellation only allowed before charging starts." },
-  { keys: ['reschedule','change time','rebook','change booking'], reply: "You can reschedule your booking!<br>Go to Station → Your Slot → Click <strong>Reschedule</strong> 📅" },
-  { keys: ['wait','waiting','game','bored','time pass'], reply: "While charging, visit our <strong>Wait Room</strong>! 🎮<br>🏎️ Play EV Car Racing game<br>💡 Learn EV facts<br>📰 Read TN EV news<br>Click 'Wait Room' button on your slot!" },
-  { keys: ['register','signup','new user','create account','how to register'], reply: "To register:<br>Click <strong>User → Register</strong> on homepage<br>Fill name, address, mobile, email, username & password<br>You'll get a welcome email! 📧" },
-  { keys: ['forgot','password','reset','forgot password'], reply: "Forgot password?<br>Go to Login page → Click <strong>'Forgot Password?'</strong><br>Enter your email → Get OTP → Reset password 📧" },
-  { keys: ['contact','support','help','problem','issue','customer','care','complaint'], reply: "Need help? Contact us:<br>📧 Email: evcharge@info.com<br>📱 Customer Care: <strong><a href='tel:6379241960' style='color:#00c6ff;'>+91 63792 41960</a></strong><br>Or describe your issue here! 😊" },
-  { keys: ['active','online','status','station status'], reply: "Station status is shown in real-time! 🟢 Green = Active, 🔴 Red = Inactive<br>Check the Station page for live status." },
-  { keys: ['ev','electric','vehicle','car','bike','two wheeler'], reply: "EV Charge Hub supports all electric vehicles — 2-wheelers, 4-wheelers, and commercial EVs! ⚡🚗" },
-  { keys: ['ac','ac charging','ac level'], reply: "AC Charging options:<br>🔌 <strong>AC Level 1</strong> - ₹100/30 mins (Slow)<br>⚡ <strong>AC Level 2</strong> - ₹200/30 mins (Fast)" },
-  { keys: ['dc','dc fast','dc charging','fast charge'], reply: "🚀 <strong>DC Fast Charging</strong> - ₹300/30 mins<br>Ultra-fast charging! Up to 90 miles range in just 30 minutes!" },
-  { keys: ['slot full','no slot','slot available','available'], reply: "If slots are full, try:<br>1. Different time slot<br>2. Different station<br>3. Come back later - slots free up after charging completes!" },
-  { keys: ['otp','verification','verify'], reply: "OTP is sent to your registered email/mobile.<br>Check spam folder if not received.<br>Click <strong>Resend OTP</strong> if expired!" },
-  { keys: ['thank','thanks','thank you','thx','ok'], reply: "You're welcome! 😊 Happy charging! ⚡ Is there anything else I can help you with?" },
-  { keys: ['bye','goodbye','ok bye','cya'], reply: "Goodbye! 👋 Drive safe and stay charged! ⚡" },
-  { keys: ['naveen','who are you','your name'], reply: "I'm <strong>Naveen</strong> 🤖, the AI assistant for EV Charge Hub! Ask me anything about bookings, payments, stations, and more!" },
+  { keys: ['hi','hello','hey','vanakkam','hai','good morning','good evening'], reply: "Hey buddy! 👋 I'm <strong>Naveen</strong>, your EV Charge Hub buddy! What's up? How can I help you out today?" },
+  { keys: ['how are you','how r u'], reply: "I'm fully charged and feeling awesome! ⚡ What about you? Need any help?" },
+  { keys: ['book','slot','booking','how to book'], reply: "Booking a slot is super easy! 😎<br>1. Just Login and go to Station<br>2. Pick a station and an open slot<br>3. Punch in your vehicle no. & time<br>4. Confirm it! ✅<br>Boom! You'll get your QR code right away." },
+  { keys: ['payment','pay','upi','razorpay','card','how to pay'], reply: "No worries about payment, we got all options covered for you!<br>📱 <strong>UPI</strong> (GPay, PhonePe, Paytm)<br>💳 <strong>Cards</strong> (Debit/Credit)<br>🏦 <strong>NetBanking</strong><br>💵 Or just pay <strong>Cash</strong> at the station!" },
+  { keys: ['qr','qr code','ticket'], reply: "Once you book, you'll get a cool <strong>QR code ticket</strong> 🎫<br>Just flash it at the station when you arrive. I'll also drop it in your email so you don't lose it!" },
+  { keys: ['tariff','price','cost','rate','how much','charges'], reply: "Here are our super affordable rates:<br>🔌 AC Level 1: <strong>₹100</strong> for 30 mins<br>⚡ AC Level 2: <strong>₹200</strong> for 30 mins<br>🚀 DC Fast: <strong>₹300</strong> for 30 mins<br>🅿️ And hey, Parking is totally <strong>Free!</strong> 😉" },
+  { keys: ['station','location','where','nearby','find','which station'], reply: "We are all over Tamil Nadu, bro! 🗺️<br>📍 Perambalur (2 spots!)<br>📍 Chennai<br>📍 Coimbatore<br>📍 Madurai<br>📍 Trichy<br>Check out the <strong>Station</strong> page to find the one closest to you!" },
+  { keys: ['cancel','cancellation','cancel booking'], reply: "Change of plans? No problem! 🔄<br>Go to Station → Your Slot → Just hit <strong>OUT</strong> to cancel.<br>⚠️ Just make sure you do it before your charging session starts!" },
+  { keys: ['reschedule','change time','rebook','change booking'], reply: "Running late? You can totally reschedule! 📅<br>Head to Station → Your Slot → and click <strong>Reschedule</strong> to pick a new time." },
+  { keys: ['wait','waiting','game','bored','time pass'], reply: "Getting bored while charging? Hop into our <strong>Wait Room</strong>! 🎮<br>🏎️ Play some EV Car Racing!<br>💡 Read cool EV facts<br>📰 Catch up on TN EV news<br>Just hit the 'Wait Room' button on your slot!" },
+  { keys: ['register','signup','new user','create account','how to register'], reply: "Awesome, you want to join us? 🎉<br>Just click <strong>User → Register</strong> on the homepage.<br>Fill in your details, set up a cool username, and you're in! You'll get a welcome email from us too! 📧" },
+  { keys: ['forgot','password','reset','forgot password'], reply: "Forgot your password? Happens to the best of us! 😅<br>Head to the Login page → Click <strong>'Forgot Password?'</strong><br>Pop in your email, grab the OTP, and reset it. Easy peasy!" },
+  { keys: ['contact','support','help','problem','issue','customer','care','complaint'], reply: "Got a problem? Don't stress, we're here for you! 🤝<br>📧 Drop an email at: evcharge@info.com<br>📱 Call our Customer Care buddy: <strong><a href='tel:6379241960' style='color:#00c6ff;'>+91 63792 41960</a></strong><br>Or just tell me right here! 😊" },
+  { keys: ['active','online','status','station status'], reply: "You can see if a station is active right on the map! 🟢 Green means it's ready, 🔴 Red means it's offline.<br>Check the Station page for live updates!" },
+  { keys: ['ev','electric','vehicle','car','bike','two wheeler'], reply: "We love all EVs! ⚡🚗 Whether you've got a cool electric bike, a car, or even a commercial EV, our hubs support them all!" },
+  { keys: ['ac','ac charging','ac level'], reply: "For AC Charging, we have:<br>🔌 <strong>AC Level 1</strong> - ₹100/30 mins (Relaxed charging)<br>⚡ <strong>AC Level 2</strong> - ₹200/30 mins (A bit faster!)" },
+  { keys: ['dc','dc fast','dc charging','fast charge'], reply: "In a hurry? Use our 🚀 <strong>DC Fast Charging</strong> for ₹300/30 mins!<br>It's ultra-fast, getting you up to 90 miles of range in just half an hour! Zoom zoom! 🏎️" },
+  { keys: ['slot full','no slot','slot available','available'], reply: "Ah man, slots are full? 😕 Don't worry, you can try:<br>1. Picking a different time<br>2. Checking a nearby station<br>3. Or just chill for a bit, slots open up all the time as cars finish charging!" },
+  { keys: ['otp','verification','verify'], reply: "We just sent an OTP to your email/mobile! 📩<br>If you don't see it, take a quick peek in your spam folder.<br>If it expired, just hit <strong>Resend OTP</strong>!" },
+  { keys: ['thank','thanks','thank you','thx','ok'], reply: "Anytime, buddy! 😊 Happy to help! Anything else you need?" },
+  { keys: ['bye','goodbye','ok bye','cya'], reply: "Catch you later, bro! 👋 Drive safe and keep that battery topped up! ⚡" },
+  { keys: ['naveen','who are you','your name'], reply: "I'm <strong>Naveen</strong> 🤖, your friendly neighborhood AI assistant for EV Charge Hub! Ask me anything, I'm here to chat!" },
 ];
 
-const defaultReply = "I'm not sure about that 🤔 But I can help you with:<br>• Slot booking<br>• Payment options<br>• Station locations<br>• Tariff rates<br>• Account issues<br><br>Call us: <strong><a href='tel:6379241960' style='color:#00c6ff;'>+91 63792 41960</a></strong> 📞";
+const defaultReply = "Oops, I'm not totally sure about that one! 🤔 But hey, I can definitely help you out with:<br>• Booking a slot<br>• How to pay<br>• Finding a station<br>• Checking out the prices<br>• Fixing account issues<br><br>Or you can always give our awesome team a call: <strong><a href='tel:6379241960' style='color:#00c6ff;'>+91 63792 41960</a></strong> 📞";
 
 // Language detection state
 let userLang = 'en';
@@ -187,7 +187,7 @@ btn.onclick = () => {
   box.style.display = opened ? 'flex' : 'none';
   btn.innerHTML = opened ? '✕' : '💬';
   if (opened && msgs.children.length === 0) {
-    const greeting = "Hi! 👋 I'm <strong>Naveen</strong>. I can speak any language! <br><br>Ask me anything about booking, payment, stations, or any issue! 😊";
+    const greeting = "Hey buddy! 👋 I'm <strong>Naveen</strong>! I can chat with you in any language you want! <br><br>Ask me anything about booking, payment, or whatever's on your mind! 😊";
     setTimeout(() => addMsg(greeting, 'bot'), 400);
   }
 };
