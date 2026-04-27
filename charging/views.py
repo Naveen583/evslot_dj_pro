@@ -1860,3 +1860,30 @@ def charging_wait(request, rid):
         messages.success(request, "Charging completed! Please proceed to payment.")
         return redirect('payment', rid=booking.id)
     return render(request, 'charging_wait.html', {'booking': booking})
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
+def trigger_call_api(request):
+    if request.method == 'POST':
+        try:
+            from twilio.rest import Client
+            import os
+            account_sid = os.environ.get('TWILIO_SID')
+            auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
+            twilio_number = '+19785862088'
+            to_number = '+916379241960'
+
+            client = Client(account_sid, auth_token)
+            
+            call = client.calls.create(
+                twiml='<Response><Say voice="alice">Hello! This is a test call from E.V. Charge Hub. A representative will join you shortly.</Say></Response>',
+                to=to_number,
+                from_=twilio_number
+            )
+            return JsonResponse({'status': 'success', 'call_sid': call.sid})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})

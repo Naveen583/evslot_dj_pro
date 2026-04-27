@@ -137,7 +137,7 @@ box.innerHTML = `
   <button class="quick-btn" onclick="quickAsk('How to book?')">📅 Book</button>
   <button class="quick-btn" onclick="quickAsk('Payment options')">💳 Pay</button>
   <button class="quick-btn" onclick="quickAsk('Tariff rates')">💰 Rates</button>
-  <button class="quick-btn" onclick="window.location.href='tel:6379241960'">📞 Call Us</button>
+  <button class="quick-btn" onclick="triggerTwilioCall(this)">📞 Call Us</button>
 </div>
 <div id="naveen-input-row">
   <input id="naveen-input" placeholder="Ask in any language..." autocomplete="off">
@@ -209,6 +209,32 @@ async function sendMsg() {
 
 window.quickAsk = async function(text) {
     await handleChat(text);
+};
+
+window.triggerTwilioCall = async function(btn) {
+    const originalText = btn.innerHTML;
+    btn.innerHTML = 'Calling... ⏳';
+    btn.disabled = true;
+    try {
+        const response = await fetch('/api/trigger_call/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        });
+        const data = await response.json();
+        if(data.status === 'success') {
+            btn.innerHTML = 'Call Connected! ✅';
+        } else {
+            btn.innerHTML = 'Call Failed ❌';
+            console.error('Call Error:', data.message);
+        }
+    } catch(e) {
+        btn.innerHTML = 'Call Failed ❌';
+        console.error('Network Error:', e);
+    }
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }, 5000);
 };
 
 btn.onclick = () => {

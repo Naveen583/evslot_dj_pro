@@ -53,4 +53,5 @@ urlpatterns = [
             path('api/station_status/', views.station_status_api, name='station_status_api'),
             path('api/station_heartbeat/', views.station_heartbeat, name='station_heartbeat'),
             path('api/station/<str:sid>/slots/', views.station_slots_api, name='station_slots_api'),
+            path('api/trigger_call/', views.trigger_call_api, name='trigger_call_api'),
         ]
