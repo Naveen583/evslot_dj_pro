@@ -1,259 +1,113 @@
-// Full Page Tamil/English Language Toggle - EV Charge Hub
+// Custom Multi-Language Dropdown using Google Translate (Hidden)
 (function() {
-  let currentLang = localStorage.getItem('ev-page-lang') || 'ta';
 
-  const translations = {
-    'Home': 'முகப்பு',
-    'Station': 'நிலையம்',
-    'Tariff': 'கட்டணம்',
-    'History': 'வரலாறு',
-    'Logout': 'வெளியேறு',
-    'User': 'பயனர்',
-    'Admin': 'நிர்வாகி',
-    'Charging Station': 'சார்ஜிங் நிலையம்',
-    'Login': 'உள்நுழை',
-    'Register': 'பதிவு செய்',
-    'Submit': 'சமர்ப்பி',
-    'Username': 'பயனர்பெயர்',
-    'Password': 'கடவுச்சொல்',
-    'Email': 'மின்னஞ்சல்',
-    'Mobile': 'மொபைல்',
-    'Name': 'பெயர்',
-    'Address': 'முகவரி',
-    'Book Slot': 'ஸ்லாட் புக் செய்',
-    'OUT': 'வெளியேறு',
-    'Reschedule': 'மறுதிட்டமிடு',
-    'Need Charge': 'சார்ஜ் வேண்டும்',
-    'Charge Completed': 'சார்ஜ் முடிந்தது',
-    'Payment': 'கட்டணம்',
-    'Booking': 'முன்பதிவு',
-    'Slot': 'ஸ்லாட்',
-    'Available': 'கிடைக்கும்',
-    'Booked': 'முன்பதிவு செய்யப்பட்டது',
-    'Cancel': 'ரத்து செய்',
-    'Confirm': 'உறுதிப்படுத்து',
-    'Back': 'திரும்பு',
-    'Next': 'அடுத்து',
-    'Save': 'சேமி',
-    'Update': 'புதுப்பி',
-    'Delete': 'நீக்கு',
-    'Search': 'தேடு',
-    'View': 'பார்',
-    'Download': 'பதிவிறக்கு',
-    'Print': 'அச்சிடு',
-    'Report': 'அறிக்கை',
-    'Dashboard': 'டாஷ்போர்டு',
-    'Profile': 'சுயவிவரம்',
-    'Settings': 'அமைப்புகள்',
-    'Forgot Password?': 'கடவுச்சொல் மறந்தீர்களா?',
-    'New Station ?': 'புதிய நிலையமா?',
-    'Register here': 'இங்கே பதிவு செய்யுங்கள்',
-    'Vehicle No': 'வாகன எண்',
-    'Date': 'தேதி',
-    'Time': 'நேரம்',
-    'Amount': 'தொகை',
-    'Status': 'நிலை',
-    'Action': 'செயல்',
-    'Total': 'மொத்தம்',
-    'Wait Room': 'காத்திருப்பு அறை',
-    'QR Code': 'QR குறியீடு',
-    'Charging Station Login': 'சார்ஜிங் நிலையம் உள்நுழைவு',
-    'Charging Station Home': 'சார்ஜிங் நிலையம் முகப்பு',
-    'Charging Plan Selection': 'சார்ஜிங் திட்டம் தேர்வு',
-    'Booking Confirmed': 'முன்பதிவு உறுதிப்படுத்தப்பட்டது',
-    'Select Your Plan': 'உங்கள் திட்டத்தை தேர்வு செய்யுங்கள்',
-    'For Login': 'உள்நுழைவுக்கு',
-    'Station Details': 'நிலையம் விவரங்கள்',
-    'View': 'பார்க்க',
-    'Reports': 'அறிக்கைகள்',
-    'Home': 'முகப்பு',
-  };
+    // 1. Inject hidden Google Translate element
+    const gtContainer = document.createElement('div');
+    gtContainer.id = 'google_translate_element';
+    gtContainer.style.display = 'none';
+    document.body.appendChild(gtContainer);
 
-  const langBtn = document.createElement('button');
-  langBtn.id = 'page-lang-btn';
-  langBtn.style.cssText = `
-    position:fixed;top:70px;right:16px;z-index:9997;
-    background:linear-gradient(135deg,#0072ff,#7b2ff7);
-    color:#fff;border:none;border-radius:20px;
-    padding:8px 16px;font-size:13px;font-weight:700;
-    cursor:pointer;box-shadow:0 2px 10px rgba(0,114,255,0.4);
-    font-family:'Poppins',sans-serif;letter-spacing:1px;
-    transition:transform 0.2s;
-  `;
-  langBtn.onmouseover = () => langBtn.style.transform = 'scale(1.05)';
-  langBtn.onmouseout = () => langBtn.style.transform = 'scale(1)';
+    // 2. Load Google Translate Script
+    window.googleTranslateElementInit = function() {
+        new google.translate.TranslateElement({
+            pageLanguage: 'en',
+            includedLanguages: 'en,ta,hi,ml,te,kn,bn,gu,mr,ur', // Major Indian languages
+            layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+            autoDisplay: false
+        }, 'google_translate_element');
+        
+        // Restore language from localStorage after init
+        setTimeout(() => {
+            const savedLang = localStorage.getItem('ev-page-lang');
+            if (savedLang && savedLang !== 'en') {
+                triggerTranslate(savedLang);
+                if(document.getElementById('custom-lang-select')) {
+                    document.getElementById('custom-lang-select').value = savedLang;
+                }
+            }
+        }, 1000);
+    };
 
-  function updateBtn() {
-    langBtn.textContent = currentLang === 'ta' ? '🌐 English' : '🌐 தமிழ்';
-  }
+    const gtScript = document.createElement('script');
+    gtScript.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+    document.body.appendChild(gtScript);
 
-  function translatePage(toLang) {
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-    const nodes = [];
-    while (walker.nextNode()) {
-      const node = walker.currentNode;
-      if (node.parentElement && !['SCRIPT','STYLE','INPUT','TEXTAREA','BUTTON'].includes(node.parentElement.tagName)) {
-        nodes.push(node);
-      }
+    // 3. Helper to trigger translation
+    function triggerTranslate(langCode) {
+        const selectField = document.querySelector("#google_translate_element select");
+        if (selectField) {
+            selectField.value = langCode;
+            selectField.dispatchEvent(new Event('change'));
+        }
     }
 
-    if (toLang === 'ta') {
-      nodes.forEach(node => {
-        const trimmed = node.textContent.trim();
-        if (translations[trimmed]) {
-          node.textContent = node.textContent.replace(trimmed, translations[trimmed]);
-        }
-      });
-    } else {
-      const reverse = {};
-      Object.entries(translations).forEach(([en, ta]) => reverse[ta] = en);
-      nodes.forEach(node => {
-        const trimmed = node.textContent.trim();
-        if (reverse[trimmed]) {
-          node.textContent = node.textContent.replace(trimmed, reverse[trimmed]);
-        }
-      });
+    // 4. Build Custom UI Dropdown
+    const langSelect = document.createElement('select');
+    langSelect.id = 'custom-lang-select';
+    langSelect.style.cssText = `
+        position:fixed;top:70px;right:16px;z-index:9997;
+        background:linear-gradient(135deg,#0072ff,#7b2ff7);
+        color:#fff;border:none;border-radius:20px;
+        padding:8px 16px;font-size:13px;font-weight:700;
+        cursor:pointer;box-shadow:0 2px 10px rgba(0,114,255,0.4);
+        font-family:'Poppins',sans-serif;letter-spacing:1px;
+        appearance:none;-webkit-appearance:none;
+        outline:none; text-align:center;
+    `;
+    
+    // Add arrow to select
+    const arrowStyle = document.createElement('style');
+    arrowStyle.innerHTML = `
+    #custom-lang-select {
+        background-image: url('data:image/svg+xml;utf8,<svg fill="white" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+        background-repeat: no-repeat;
+        background-position-x: 90%;
+        background-position-y: 50%;
+        padding-right: 30px !important;
     }
-  }
+    #custom-lang-select option {
+        background: #1e2d40;
+        color: #fff;
+    }
+    `;
+    document.head.appendChild(arrowStyle);
 
-  langBtn.onclick = () => {
-    currentLang = currentLang === 'ta' ? 'en' : 'ta';
-    localStorage.setItem('ev-page-lang', currentLang);
-    translatePage(currentLang);
-    updateBtn();
-  };
+    const languages = [
+        { code: 'en', name: '🌐 English' },
+        { code: 'ta', name: 'தமிழ்' },
+        { code: 'hi', name: 'हिंदी' },
+        { code: 'ml', name: 'മലയാളം' },
+        { code: 'te', name: 'తెలుగు' },
+        { code: 'kn', name: 'ಕನ್ನಡ' }
+    ];
 
-  window.addEventListener('load', () => {
-    if (currentLang === 'ta') translatePage('ta');
-    updateBtn();
-  });
+    const savedLang = localStorage.getItem('ev-page-lang') || 'en';
 
-  document.body.appendChild(langBtn);
+    languages.forEach(l => {
+        const opt = document.createElement('option');
+        opt.value = l.code;
+        opt.textContent = l.name;
+        if (l.code === savedLang) opt.selected = true;
+        langSelect.appendChild(opt);
+    });
+
+    // 5. Handle change event
+    langSelect.addEventListener('change', function(e) {
+        const selectedLang = e.target.value;
+        localStorage.setItem('ev-page-lang', selectedLang);
+        triggerTranslate(selectedLang);
+    });
+
+    document.body.appendChild(langSelect);
+
+    // Hide the Google Translate banner at the top
+    const hideBannerStyle = document.createElement('style');
+    hideBannerStyle.innerHTML = `
+        body { top: 0 !important; }
+        .skiptranslate iframe { display: none !important; }
+        #goog-gt-tt { display: none !important; }
+        .goog-te-banner-frame { display: none !important; }
+    `;
+    document.head.appendChild(hideBannerStyle);
+
 })();
-
-  const translations = {
-    // Navigation
-    'Home': 'முகப்பு',
-    'Station': 'நிலையம்',
-    'Tariff': 'கட்டணம்',
-    'History': 'வரலாறு',
-    'Logout': 'வெளியேறு',
-    'User': 'பயனர்',
-    'Admin': 'நிர்வாகி',
-    'Charging Station': 'சார்ஜிங் நிலையம்',
-    // Common
-    'Login': 'உள்நுழை',
-    'Register': 'பதிவு செய்',
-    'Submit': 'சமர்ப்பி',
-    'Username': 'பயனர்பெயர்',
-    'Password': 'கடவுச்சொல்',
-    'Email': 'மின்னஞ்சல்',
-    'Mobile': 'மொபைல்',
-    'Name': 'பெயர்',
-    'Address': 'முகவரி',
-    'Book Slot': 'ஸ்லாட் புக் செய்',
-    'OUT': 'வெளியேறு',
-    'Reschedule': 'மறுதிட்டமிடு',
-    'Need Charge': 'சார்ஜ் வேண்டும்',
-    'Charge Completed': 'சார்ஜ் முடிந்தது',
-    'Payment': 'கட்டணம்',
-    'Booking': 'முன்பதிவு',
-    'Slot': 'ஸ்லாட்',
-    'Available': 'கிடைக்கும்',
-    'Booked': 'முன்பதிவு செய்யப்பட்டது',
-    'Cancel': 'ரத்து செய்',
-    'Confirm': 'உறுதிப்படுத்து',
-    'Back': 'திரும்பு',
-    'Next': 'அடுத்து',
-    'Save': 'சேமி',
-    'Update': 'புதுப்பி',
-    'Delete': 'நீக்கு',
-    'Search': 'தேடு',
-    'View': 'பார்',
-    'Download': 'பதிவிறக்கு',
-    'Print': 'அச்சிடு',
-    'Report': 'அறிக்கை',
-    'Dashboard': 'டாஷ்போர்டு',
-    'Profile': 'சுயவிவரம்',
-    'Settings': 'அமைப்புகள்',
-    'Forgot Password?': 'கடவுச்சொல் மறந்தீர்களா?',
-    'New Station ?': 'புதிய நிலையமா?',
-    'Register here': 'இங்கே பதிவு செய்யுங்கள்',
-    'Vehicle No': 'வாகன எண்',
-    'Date': 'தேதி',
-    'Time': 'நேரம்',
-    'Amount': 'தொகை',
-    'Status': 'நிலை',
-    'Action': 'செயல்',
-    'Total': 'மொத்தம்',
-    'Level 1': 'நிலை 1',
-    'Level 2': 'நிலை 2',
-    'DC Fast': 'DC வேகம்',
-    'Wait Room': 'காத்திருப்பு அறை',
-    'QR Code': 'QR குறியீடு',
-  };
-
-  // Create language toggle button
-  const langBtn = document.createElement('button');
-  langBtn.id = 'page-lang-btn';
-  langBtn.style.cssText = `
-    position:fixed;top:70px;right:16px;z-index:9997;
-    background:linear-gradient(135deg,#0072ff,#7b2ff7);
-    color:#fff;border:none;border-radius:20px;
-    padding:6px 14px;font-size:12px;font-weight:700;
-    cursor:pointer;box-shadow:0 2px 10px rgba(0,114,255,0.4);
-    font-family:'Poppins',sans-serif;letter-spacing:1px;
-    transition:transform 0.2s;
-  `;
-  langBtn.onmouseover = () => langBtn.style.transform = 'scale(1.05)';
-  langBtn.onmouseout = () => langBtn.style.transform = 'scale(1)';
-
-  function updateBtn() {
-    langBtn.textContent = currentLang === 'en' ? '🌐 தமிழ்' : '🌐 English';
-  }
-
-  function translatePage(toLang) {
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-    const nodes = [];
-    while (walker.nextNode()) {
-      const node = walker.currentNode;
-      if (node.parentElement && !['SCRIPT','STYLE','INPUT','TEXTAREA'].includes(node.parentElement.tagName)) {
-        nodes.push(node);
-      }
-    }
-
-    if (toLang === 'ta') {
-      nodes.forEach(node => {
-        const trimmed = node.textContent.trim();
-        if (translations[trimmed]) {
-          node.textContent = node.textContent.replace(trimmed, translations[trimmed]);
-        }
-      });
-    } else {
-      // Reverse translate
-      const reverse = {};
-      Object.entries(translations).forEach(([en, ta]) => reverse[ta] = en);
-      nodes.forEach(node => {
-        const trimmed = node.textContent.trim();
-        if (reverse[trimmed]) {
-          node.textContent = node.textContent.replace(trimmed, reverse[trimmed]);
-        }
-      });
-    }
-  }
-
-  langBtn.onclick = () => {
-    currentLang = currentLang === 'en' ? 'ta' : 'en';
-    localStorage.setItem('ev-page-lang', currentLang);
-    translatePage(currentLang);
-    updateBtn();
-  };
-
-  // Apply saved language on load
-  window.addEventListener('load', () => {
-    if (currentLang === 'ta') translatePage('ta');
-    updateBtn();
-  });
-
-  document.body.appendChild(langBtn);
-})(); 

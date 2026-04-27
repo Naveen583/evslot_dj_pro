@@ -47,11 +47,40 @@ async function translateText(text, targetLang, sourceLang='auto') {
   }
 }
 
-function getReplyEnglish(msg) {
+async function fetchWikipedia(query) {
+  try {
+    const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.type === 'standard' && data.extract) {
+      return `Here is what I found: <br><br> <strong>${data.title}</strong>: ${data.extract} <br><br> <a href="${data.content_urls.desktop.page}" target="_blank" style="color:#00c6ff; text-decoration: underline;">Read more on Wikipedia</a>`;
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function getReplyEnglish(msg) {
   const lower = msg.toLowerCase();
+  
+  // Easter egg: Joke API
+  if (lower.includes('joke')) {
+    try {
+      const res = await fetch('https://v2.jokeapi.dev/joke/Any?safe-mode&type=single');
+      const data = await res.json();
+      if (data.joke) return `Here's a joke for you! 😄<br><br>"${data.joke}"`;
+    } catch (e) {}
+  }
+
   for (const r of responses) {
     if (r.keys.some(k => lower.includes(k))) return r.reply;
   }
+  
+  // Fallback to Wikipedia to act like a Normal AI
+  const wikiReply = await fetchWikipedia(msg);
+  if (wikiReply) return wikiReply;
+
   return defaultReply;
 }
 
@@ -108,7 +137,7 @@ box.innerHTML = `
   <button class="quick-btn" onclick="quickAsk('How to book?')">📅 Book</button>
   <button class="quick-btn" onclick="quickAsk('Payment options')">💳 Pay</button>
   <button class="quick-btn" onclick="quickAsk('Tariff rates')">💰 Rates</button>
-  <button class="quick-btn" onclick="quickAsk('Contact support')">📞 Help</button>
+  <button class="quick-btn" onclick="window.location.href='tel:6379241960'">📞 Call Us</button>
 </div>
 <div id="naveen-input-row">
   <input id="naveen-input" placeholder="Ask in any language..." autocomplete="off">
@@ -155,7 +184,7 @@ async function handleChat(text) {
     userLang = translatedToEn.detectedLang; // update user language
     
     // 2. Get the English reply
-    const englishReply = getReplyEnglish(translatedToEn.text);
+    const englishReply = await getReplyEnglish(translatedToEn.text);
     
     // 3. Translate the reply back to the user's language
     let finalReply = englishReply;
