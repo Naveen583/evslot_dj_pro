@@ -1,6 +1,8 @@
 {% load static %}
 <html>
 <head>
+    <link rel="icon" href="/static/images/ev.jpg" type="image/jpeg">
+
   <title>Find Stations – EV Charge Hub</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -139,6 +141,20 @@
 <script>
   setTimeout(() => { document.getElementById('ev-splash').classList.add('hide'); }, 1800);
 </script>
-<script src="/static/js/lang-toggle.js"></script><script src="/static/js/naveen-chat.js"></script></body>
+<script src="/static/js/lang-toggle.js"></script><script src="/static/js/naveen-chat.js"></script>
+    <!-- Google Translate Widget for Tamil -->
+    <div id="google_translate_element" style="position: fixed; bottom: 20px; left: 20px; z-index: 9999; background: white; padding: 5px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
+    <script type="text/javascript">
+      function googleTranslateElementInit() {
+        new google.translate.TranslateElement({
+          pageLanguage: 'en', 
+          includedLanguages: 'en,ta',
+          layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+        }, 'google_translate_element');
+      }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    
+</body>
 </html>
 
