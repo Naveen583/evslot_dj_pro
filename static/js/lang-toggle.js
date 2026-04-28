@@ -34,10 +34,23 @@
 
     // 3. Helper to trigger translation
     function triggerTranslate(langCode) {
-        const selectField = document.querySelector("#google_translate_element select");
+        let selectField = document.querySelector(".goog-te-combo");
+        if (!selectField) {
+            selectField = document.querySelector("#google_translate_element select");
+        }
+        
         if (selectField) {
             selectField.value = langCode;
-            selectField.dispatchEvent(new Event('change'));
+            selectField.dispatchEvent(new Event('change', { bubbles: true }));
+        } else {
+            // Retry if not yet loaded
+            setTimeout(() => {
+                let retrySelect = document.querySelector(".goog-te-combo") || document.querySelector("#google_translate_element select");
+                if(retrySelect) {
+                    retrySelect.value = langCode;
+                    retrySelect.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }, 500);
         }
     }
 
@@ -82,6 +95,12 @@
     ];
 
     const savedLang = localStorage.getItem('ev-page-lang') || 'en';
+    
+    // Set googtrans cookie on load for persistence
+    if (savedLang !== 'en') {
+        document.cookie = `googtrans=/en/${savedLang}; path=/`;
+        document.cookie = `googtrans=/en/${savedLang}; domain=.${location.hostname}; path=/`;
+    }
 
     languages.forEach(l => {
         const opt = document.createElement('option');
@@ -95,7 +114,15 @@
     langSelect.addEventListener('change', function(e) {
         const selectedLang = e.target.value;
         localStorage.setItem('ev-page-lang', selectedLang);
+        
+        // Set Google Translate cookie directly
+        document.cookie = `googtrans=/en/${selectedLang}; path=/`;
+        document.cookie = `googtrans=/en/${selectedLang}; domain=.${location.hostname}; path=/`;
+        
         triggerTranslate(selectedLang);
+        
+        // Optional: reload page to force translation if it gets stuck
+        // setTimeout(() => window.location.reload(), 500);
     });
 
     document.body.appendChild(langSelect);

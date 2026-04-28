@@ -54,4 +54,5 @@ urlpatterns = [
             path('api/station_heartbeat/', views.station_heartbeat, name='station_heartbeat'),
             path('api/station/<str:sid>/slots/', views.station_slots_api, name='station_slots_api'),
             path('api/trigger_call/', views.trigger_call_api, name='trigger_call_api'),
+            path('api/twilio_incoming/', views.twilio_incoming_webhook, name='twilio_incoming_webhook'),
         ]

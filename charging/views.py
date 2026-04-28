@@ -1878,8 +1878,9 @@ def trigger_call_api(request):
 
             client = Client(account_sid, auth_token)
             
+            # The TwiML here determines what the person hears when they pick up the call
             call = client.calls.create(
-                twiml='<Response><Say voice="alice">Hello! This is a test call from E.V. Charge Hub. A representative will join you shortly.</Say></Response>',
+                twiml='<Response><Say voice="Polly.Aditi">Hi! I am Naveen from E V Charge Hub. How can I help you book your charging slot today?</Say></Response>',
                 to=to_number,
                 from_=twilio_number
             )
@@ -1887,3 +1888,12 @@ def trigger_call_api(request):
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)})
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+@csrf_exempt
+def twilio_incoming_webhook(request):
+    """Webhook for handling incoming calls TO the Twilio number."""
+    from twilio.twiml.voice_response import VoiceResponse
+    response = VoiceResponse()
+    response.say("Hi! I am Naveen from E V Charge Hub. How can I help you book your charging slot today?", voice="Polly.Aditi")
+    from django.http import HttpResponse
+    return HttpResponse(str(response), content_type='text/xml')
