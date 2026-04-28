@@ -1908,8 +1908,35 @@ def trigger_call_api(request):
 @csrf_exempt
 def twilio_incoming_webhook(request):
     """Webhook for handling incoming calls TO the Twilio number."""
+    from twilio.twiml.voice_response import VoiceResponse, Gather
+    response = VoiceResponse()
+    
+    # Use Gather to collect keypress from the user
+    gather = Gather(num_digits=1, action='/charging/api/twilio_keypress/', method='POST')
+    gather.say("Hi! I am Naveen from E V Charge Hub. Press 1 to book a charging slot instantly. Press 2 to speak to a customer care representative.", voice="Polly.Aditi")
+    
+    response.append(gather)
+    # Fallback if they don't press anything
+    response.say("We didn't receive any input. Have a great day!", voice="Polly.Aditi")
+    
+    from django.http import HttpResponse
+    return HttpResponse(str(response), content_type='text/xml')
+
+@csrf_exempt
+def twilio_handle_keypress(request):
+    """Handles the digits pressed by the caller."""
     from twilio.twiml.voice_response import VoiceResponse
     response = VoiceResponse()
-    response.say("Hi! I am Naveen from E V Charge Hub. How can I help you book your charging slot today?", voice="Polly.Aditi")
+    
+    digit_pressed = request.POST.get('Digits', '')
+    
+    if digit_pressed == '1':
+        response.say("Your charging slot has been successfully booked for today. You will receive an S M S confirmation shortly. Thank you!", voice="Polly.Aditi")
+    elif digit_pressed == '2':
+        response.say("Please wait while I connect you to our customer care team.", voice="Polly.Aditi")
+        # Future improvement: response.dial('+916379241960')
+    else:
+        response.say("Sorry, I did not understand that choice. Goodbye.", voice="Polly.Aditi")
+        
     from django.http import HttpResponse
     return HttpResponse(str(response), content_type='text/xml')
