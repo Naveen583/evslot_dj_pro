@@ -49,11 +49,16 @@ async function translateText(text, targetLang, sourceLang='auto') {
 
 async function fetchWikipedia(query) {
   try {
-    const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (data.type === 'standard' && data.extract) {
-      return `Here is what I found: <br><br> <strong>${data.title}</strong>: ${data.extract} <br><br> <a href="${data.content_urls.desktop.page}" target="_blank" style="color:#00c6ff; text-decoration: underline;">Read more on Wikipedia</a>`;
+    const searchRes = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&utf8=&format=json&origin=*`);
+    const searchData = await searchRes.json();
+    if (searchData.query && searchData.query.search.length > 0) {
+      const bestMatch = searchData.query.search[0].title;
+      const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(bestMatch)}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data.type === 'standard' && data.extract) {
+        return `Here is what I found: <br><br> <strong>${data.title}</strong>: ${data.extract} <br><br> <a href="${data.content_urls.desktop.page}" target="_blank" style="color:#00c6ff; text-decoration: underline;">Read more on Wikipedia</a>`;
+      }
     }
     return null;
   } catch (e) {
@@ -113,6 +118,10 @@ style.textContent = `
 .quick-btns{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px;border-top:1px solid #1e2d40;}
 .quick-btn{background:#131920;border:1px solid #1e2d40;color:#4a9eff;font-size:11px;padding:4px 10px;border-radius:12px;cursor:pointer;transition:all 0.2s;}
 .quick-btn:hover{background:#0072ff;color:#fff;border-color:#0072ff;}
+#naveen-mic{background:none;border:none;color:#4a9eff;font-size:18px;cursor:pointer;padding:0 8px;transition:color 0.2s;}
+#naveen-mic:hover{color:#00c6ff;}
+.recording{color:#ff4a4a !important; animation:pulse 1s infinite;}
+@keyframes pulse{0%{transform:scale(1);}50%{transform:scale(1.2);}100%{transform:scale(1);}}
 `;
 document.head.appendChild(style);
 
@@ -141,6 +150,7 @@ box.innerHTML = `
 </div>
 <div id="naveen-input-row">
   <input id="naveen-input" placeholder="Ask in any language..." autocomplete="off">
+  <button id="naveen-mic" title="Speak">🎤</button>
   <button id="naveen-send">➤</button>
 </div>`;
 
@@ -173,6 +183,38 @@ function removeTyping() {
   if (t) t.remove();
 }
 
+// --- Voice AI Implementation ---
+function speakReply(text, langCode) {
+    if (!window.speechSynthesis) return;
+    const synth = window.speechSynthesis;
+    // Strip HTML tags for clean speech
+    const plainText = text.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ');
+    const utterThis = new SpeechSynthesisUtterance(plainText);
+    utterThis.lang = (langCode === 'auto' || !langCode) ? 'en-US' : langCode;
+    synth.speak(utterThis);
+}
+
+const micBtn = document.getElementById('naveen-mic');
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (SpeechRecognition && micBtn) {
+    const recognition = new SpeechRecognition();
+    recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        input.value = transcript;
+        sendMsg();
+    };
+    micBtn.onclick = () => {
+        recognition.lang = (userLang && userLang !== 'auto') ? userLang : 'en-US';
+        micBtn.classList.add('recording');
+        try { recognition.start(); } catch(e) {}
+    };
+    recognition.onend = () => micBtn.classList.remove('recording');
+    recognition.onerror = () => micBtn.classList.remove('recording');
+} else if (micBtn) {
+    micBtn.style.display = 'none'; // Hide if not supported
+}
+// -----------------------------
+
 async function handleChat(text) {
   addMsg(text, 'user');
   input.value = '';
@@ -195,6 +237,7 @@ async function handleChat(text) {
     
     removeTyping();
     addMsg(finalReply, 'bot');
+    speakReply(finalReply, userLang); // Speak the answer out loud!
   } catch (e) {
     removeTyping();
     addMsg("Sorry, I'm having trouble understanding right now.", 'bot');
