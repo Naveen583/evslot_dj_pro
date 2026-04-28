@@ -1871,10 +1871,26 @@ def trigger_call_api(request):
         try:
             from twilio.rest import Client
             import os
+            import json
+            
             account_sid = os.environ.get('TWILIO_SID')
             auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
             twilio_number = '+19785862088'
-            to_number = '+916379241960'
+            
+            to_number = '+916379241960' # Default fallback
+            
+            if request.body:
+                try:
+                    data = json.loads(request.body)
+                    if 'phone' in data and data['phone']:
+                        phone = data['phone'].strip()
+                        if phone.startswith('+'):
+                            to_number = phone
+                        elif len(phone) >= 10:
+                            # Handle Indian numbers without country code
+                            to_number = '+91' + phone[-10:]
+                except json.JSONDecodeError:
+                    pass
 
             client = Client(account_sid, auth_token)
             
@@ -1884,7 +1900,7 @@ def trigger_call_api(request):
                 to=to_number,
                 from_=twilio_number
             )
-            return JsonResponse({'status': 'success', 'call_sid': call.sid})
+            return JsonResponse({'status': 'success', 'call_sid': call.sid, 'called_number': to_number})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)})
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
