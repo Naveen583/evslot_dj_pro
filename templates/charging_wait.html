@@ -2,338 +2,248 @@
 <html>
 <head>
     <link rel="icon" href="/static/images/ev.jpg" type="image/jpeg">
+    <title>Charging in Progress – EV Charge Hub</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css?family=Outfit:300,400,600,700,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <style>
+        body {
+            background: #0f172a; /* Slate 900 */
+            font-family: 'Outfit', sans-serif;
+            color: #f8fafc;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        
+        /* Glassmorphism elements */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            padding: 24px;
+        }
 
-  <title>Charging in Progress – EV Charge Hub</title>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,600,700,800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
-  <style>
-    body{background:#0a0e1a;font-family:'Poppins',sans-serif;color:#fff;min-height:100vh;}
-    .gbar{background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7);height:5px;}
-    .card-dark{background:#0d1117;border:1px solid #1e2d40;border-radius:16px;padding:24px;}
-    .fact-card{background:linear-gradient(135deg,#0072ff15,#7b2ff715);border:1px solid #0072ff30;border-radius:12px;padding:16px;margin-bottom:12px;}
-  </style>
+        .gradient-text {
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .ad-banner {
+            background: repeating-linear-gradient(45deg, #1e293b, #1e293b 10px, #0f172a 10px, #0f172a 20px);
+            border: 2px dashed #334155;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+            transition: all 0.3s;
+        }
+        .ad-banner:hover { border-color: #38bdf8; color: #38bdf8; }
+
+        .iframe-container {
+            position: relative;
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.05);
+            background: #000;
+        }
+        .iframe-container iframe {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%; border: none;
+        }
+
+        /* Battery Animation */
+        .battery-container {
+            width: 100%; max-width: 180px; height: 320px;
+            border: 6px solid #334155; border-radius: 20px;
+            margin: 30px auto; position: relative;
+            background: #0f172a;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 0 30px rgba(56, 189, 248, 0.2);
+        }
+        .battery-nub {
+            position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+            width: 50px; height: 14px; background: #334155; border-radius: 6px 6px 0 0;
+        }
+        .battery-level {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            background: linear-gradient(0deg, #3b82f6, #34d399);
+            border-radius: 14px; transition: height 1s ease-out;
+            box-shadow: 0 0 20px rgba(52, 211, 153, 0.6);
+        }
+        
+        .nav-header {
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 16px 30px; position: sticky; top: 0; z-index: 100;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    </style>
 </head>
 <body>
-<div class="gbar"></div>
 
-<!-- Navbar -->
-<nav class="navbar navbar-dark" style="background:#0d1117;padding:12px 20px;">
-  <span style="color:#00c6ff;font-weight:800;font-size:18px;">⚡ EV CHARGE HUB</span>
-  <a href="{% url 'user_home' %}" style="color:#8892a4;font-size:13px;">🏠 Home</a>
-</nav>
-
-<div class="container py-4">
-  <div class="row">
-
-    <!-- Left: Charging Progress -->
-    <div class="col-md-5 mb-4">
-      <div class="card-dark text-center">
-        <h5 style="color:#4a9eff;letter-spacing:2px;font-size:12px;text-transform:uppercase;">Charging In Progress</h5>
-        <h3 style="color:#fff;font-weight:700;">Slot {{ booking.slot }}</h3>
-        <p style="color:#8892a4;font-size:13px;">{{ booking.station.name }}</p>
-
-        <!-- Battery Animation -->
-        <div style="margin:20px auto;width:120px;height:200px;border:4px solid #1e2d40;border-radius:12px;position:relative;overflow:hidden;">
-          <div id="battery-fill" style="position:absolute;bottom:0;width:100%;background:linear-gradient(0deg,#00c6ff,#34d399);border-radius:8px;transition:height 1s ease;" height="0%"></div>
-          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:22px;font-weight:800;z-index:2;" id="battery-pct">0%</div>
-          <!-- Battery top nub -->
-          <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);width:30px;height:10px;background:#1e2d40;border-radius:4px 4px 0 0;"></div>
-        </div>
-
-        <!-- Countdown Timer -->
-        <div style="background:#131920;border-radius:12px;padding:16px;margin-top:16px;">
-          <p style="color:#8892a4;font-size:12px;margin:0 0 4px;">⏱️ Time Remaining</p>
-          <div id="countdown" style="font-size:36px;font-weight:800;color:#00c6ff;">--:--</div>
-        </div>
-
-        <!-- Booking Info -->
-        <div style="text-align:left;margin-top:16px;">
-          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e2d40;">
-            <span style="color:#8892a4;font-size:13px;">Vehicle</span>
-            <span style="font-size:13px;">{{ booking.carno }}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e2d40;">
-            <span style="color:#8892a4;font-size:13px;">Start Time</span>
-            <span style="font-size:13px;">{{ booking.btime1 }}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;padding:6px 0;">
-            <span style="color:#8892a4;font-size:13px;">End Time</span>
-            <span style="font-size:13px;color:#34d399;">{{ booking.btime2 }}</span>
-          </div>
-        </div>
-      </div>
+<div class="nav-header">
+    <div style="font-size: 22px; font-weight: 800;">
+        <span class="gradient-text">⚡ EV CHARGE HUB</span>
     </div>
-
-    <!-- Right: Entertainment -->
-    <div class="col-md-7 mb-4">
-
-      <!-- EV Fun Facts Carousel -->
-      <div class="card-dark mb-3">
-        <h6 style="color:#4a9eff;font-weight:700;margin-bottom:12px;">💡 Did You Know?</h6>
-        <div id="fact-display" class="fact-card">
-          <p id="fact-text" style="margin:0;font-size:14px;color:#e2e8f0;">Loading...</p>
-        </div>
-        <div style="text-align:center;">
-          <button onclick="nextFact()" style="background:linear-gradient(90deg,#0072ff,#7b2ff7);border:none;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;cursor:pointer;">Next Fact ➡️</button>
-        </div>
-      </div>
-
-      <!-- EV Car Racing Game -->
-      <div class="card-dark mb-3">
-        <h6 style="color:#4a9eff;font-weight:700;margin-bottom:8px;">🏎️ EV Car Racing</h6>
-        <p style="color:#8892a4;font-size:12px;">Use ← → Arrow keys or tap Left/Right to dodge traffic!</p>
-        <div style="text-align:center;">
-          <div style="font-size:13px;color:#8892a4;margin-bottom:6px;">Score: <span id="race-score" style="color:#00c6ff;font-weight:700;">0</span> &nbsp; Best: <span id="race-best" style="color:#fbbf24;font-weight:700;">0</span> &nbsp; Level: <span id="race-level" style="color:#34d399;font-weight:700;">1</span></div>
-          <canvas id="race-canvas" width="280" height="380" style="background:#0a1628;border-radius:12px;border:2px solid #0072ff;display:block;margin:0 auto;cursor:pointer;box-shadow:0 0 20px rgba(0,114,255,0.3);"></canvas>
-          <div style="margin-top:8px;display:flex;justify-content:center;gap:12px;">
-            <button id="btn-left" style="background:linear-gradient(135deg,#0072ff,#7b2ff7);border:none;color:#fff;padding:10px 24px;border-radius:10px;font-size:18px;cursor:pointer;touch-action:manipulation;">◀</button>
-            <button id="btn-right" style="background:linear-gradient(135deg,#0072ff,#7b2ff7);border:none;color:#fff;padding:10px 24px;border-radius:10px;font-size:18px;cursor:pointer;touch-action:manipulation;">▶</button>
-          </div>
-          <p style="color:#8892a4;font-size:11px;margin-top:6px;">Arrow keys or tap buttons to move ⚡</p>
-        </div>
-      </div>
-
-      <!-- Live TN News -->
-      <div class="card-dark">
-        <h6 style="color:#4a9eff;font-weight:700;margin-bottom:12px;">📰 EV & Tamil Nadu Updates</h6>
-        <div id="news-feed">
-          <div class="fact-card"><p style="margin:0;font-size:13px;color:#e2e8f0;">🔋 Tamil Nadu targets 1 lakh EV charging stations by 2030 under TEDA initiative.</p></div>
-          <div class="fact-card"><p style="margin:0;font-size:13px;color:#e2e8f0;">⚡ Chennai Metro Rail now has EV charging points at 10 major stations.</p></div>
-          <div class="fact-card"><p style="margin:0;font-size:13px;color:#e2e8f0;">🚗 Tata Nexon EV is the best-selling EV in Tamil Nadu for 2024-25.</p></div>
-          <div class="fact-card"><p style="margin:0;font-size:13px;color:#e2e8f0;">🌱 TN Govt offers ₹1.5 lakh subsidy on electric two-wheelers under FAME-II.</p></div>
-          <div class="fact-card"><p style="margin:0;font-size:13px;color:#e2e8f0;">🏭 Ola Electric's factory in Hosur, TN produces 1 million scooters/year.</p></div>
-        </div>
-      </div>
-    </div>
-  </div>
+    <a href="{% url 'user_home' %}" style="color: #94a3b8; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+        🏠 Home
+    </a>
 </div>
 
-<div class="gbar"></div>
+<div class="container-fluid" style="padding: 30px; max-width: 1600px;">
+    <div class="row g-4">
+
+        <!-- LEFT COLUMN: Charging Progress (Sticky) -->
+        <div class="col-lg-4 col-xl-3 mb-4">
+            <div class="glass-panel" style="position: sticky; top: 90px;">
+                <div class="text-center">
+                    <div style="display:inline-block; padding: 6px 16px; background: rgba(56,189,248,0.1); color: #38bdf8; border-radius: 20px; font-size: 13px; font-weight: 700; letter-spacing: 1px; margin-bottom: 20px;">
+                        CHARGING IN PROGRESS
+                    </div>
+                    
+                    <h2 style="font-weight: 800; margin-bottom: 5px;">Slot {{ booking.slot }}</h2>
+                    <p style="color: #94a3b8; font-size: 15px;">{{ booking.station.name }}</p>
+
+                    <!-- Large Battery -->
+                    <div class="battery-container">
+                        <div class="battery-nub"></div>
+                        <div id="battery-fill" class="battery-level" style="height: 0%;"></div>
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 42px; font-weight: 800; text-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 2;" id="battery-pct">
+                            0<span style="font-size: 24px;">%</span>
+                        </div>
+                    </div>
+
+                    <!-- Countdown -->
+                    <div style="background: rgba(0,0,0,0.3); border-radius: 16px; padding: 20px; margin-top: 30px; border: 1px solid rgba(255,255,255,0.05);">
+                        <p style="color: #94a3b8; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px;">⏱️ Time Remaining</p>
+                        <div id="countdown" style="font-size: 48px; font-weight: 800; color: #f8fafc; font-variant-numeric: tabular-nums;">--:--</div>
+                    </div>
+
+                    <!-- Details -->
+                    <div style="margin-top: 30px; text-align: left;">
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-3" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <span style="color: #94a3b8; font-size: 14px;">Vehicle</span>
+                            <span style="font-weight: 600;">{{ booking.carno }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-3" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <span style="color: #94a3b8; font-size: 14px;">Start Time</span>
+                            <span style="font-weight: 600;">{{ booking.btime1 }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span style="color: #94a3b8; font-size: 14px;">End Time</span>
+                            <span style="font-weight: 600; color: #34d399;">{{ booking.btime2 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Entertainment & Ads -->
+        <div class="col-lg-8 col-xl-9">
+            
+            <!-- Header -->
+            <div class="mb-4">
+                <h2 style="font-weight: 800; margin-bottom: 5px;">Entertainment Lounge</h2>
+                <p style="color: #94a3b8; font-size: 16px;">Relax, play, and watch while your EV gets fully charged.</p>
+            </div>
+
+            <!-- TOP AD BANNER -->
+            <div class="ad-banner mb-5" style="height: 120px; font-size: 18px;">
+                [ AdSense Banner Space - 728x90 ]
+            </div>
+
+            <!-- PREMIUM GAMES SECTION -->
+            <div class="glass-panel mb-5">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 style="font-weight: 700; margin: 0;"><span style="font-size: 24px; margin-right: 10px;">🎮</span> Premium Games</h4>
+                    <span style="background: #3b82f6; color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700;">HIGH QUALITY</span>
+                </div>
+                
+                <div class="row g-4">
+                    <!-- Main Game (Large) -->
+                    <div class="col-12">
+                        <div class="iframe-container" style="padding-top: 56.25%;"> <!-- 16:9 Aspect Ratio -->
+                            <!-- High quality HTML5 racing game -->
+                            <iframe src="https://html5.gamedistribution.com/rvvASMiM/" allowfullscreen></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MIDDLE AD BANNER (Responsive) -->
+            <div class="ad-banner mb-5" style="height: 90px; font-size: 16px;">
+                [ Responsive Ad Space ]
+            </div>
+
+            <!-- TRENDING TRAILERS -->
+            <div class="glass-panel mb-5">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 style="font-weight: 700; margin: 0;"><span style="font-size: 24px; margin-right: 10px;">🎬</span> Trending Trailers</h4>
+                </div>
+                
+                <div class="row g-4">
+                    <!-- Trailer 1 -->
+                    <div class="col-md-6">
+                        <div class="iframe-container" style="padding-top: 56.25%;">
+                            <iframe src="https://www.youtube.com/embed/y1uHwEW2vFw?si=UvR0B4H-a-hC-4zV" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                        <h6 class="mt-3" style="font-weight: 600;">Kalki 2898 AD - Official Trailer</h6>
+                    </div>
+                    <!-- Trailer 2 -->
+                    <div class="col-md-6">
+                        <div class="iframe-container" style="padding-top: 56.25%;">
+                            <iframe src="https://www.youtube.com/embed/Po3jStA673E?si=u0Z3q_U2h-P8_W1N" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                        <h6 class="mt-3" style="font-weight: 600;">LEO - Official Trailer | Thalapathy Vijay</h6>
+                    </div>
+                    <!-- Trailer 3 -->
+                    <div class="col-md-6">
+                        <div class="iframe-container" style="padding-top: 56.25%;">
+                            <iframe src="https://www.youtube.com/embed/73_1biungkY?si=Uq-n_X-X2F-jR2_Z" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                        <h6 class="mt-3" style="font-weight: 600;">Deadpool & Wolverine - Official Trailer</h6>
+                    </div>
+                    <!-- Trailer 4 -->
+                    <div class="col-md-6">
+                        <div class="iframe-container" style="padding-top: 56.25%;">
+                            <iframe src="https://www.youtube.com/embed/2m1drlOZSDw?si=U1Z_n_W2F-jQ2_Z" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                        <h6 class="mt-3" style="font-weight: 600;">Jawan - Official Trailer | Shah Rukh Khan</h6>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOTTOM AD BANNER -->
+            <div class="ad-banner mb-5" style="height: 120px; font-size: 18px;">
+                [ AdSense Banner Space - Bottom ]
+            </div>
+
+        </div>
+    </div>
+</div>
 
 <script>
-// EV Car Racing Game
-(function(){
-  const canvas = document.getElementById('race-canvas');
-  const ctx = canvas.getContext('2d');
-  const W = 280, H = 380;
-  const LANES = [50, 110, 170, 230];
-  let car, obstacles, score, best=0, level, speed, gameState='idle', raf, frameCount;
-
-  function reset(){
-    car = {lane:1, x:LANES[1], y:H-80, w:36, h:56, moving:false, targetX:LANES[1]};
-    obstacles = [];
-    score = 0; level = 1; speed = 3; frameCount = 0;
-    gameState = 'running';
-    document.getElementById('race-score').textContent = 0;
-    document.getElementById('race-level').textContent = 1;
-  }
-
-  function moveLeft(){ if(gameState==='running' && car.lane>0){ car.lane--; car.targetX=LANES[car.lane]; } else if(gameState!=='running') reset(); }
-  function moveRight(){ if(gameState==='running' && car.lane<3){ car.lane++; car.targetX=LANES[car.lane]; } else if(gameState!=='running') reset(); }
-
-  document.addEventListener('keydown', e=>{
-    if(e.key==='ArrowLeft'){ e.preventDefault(); moveLeft(); }
-    if(e.key==='ArrowRight'){ e.preventDefault(); moveRight(); }
-  });
-  document.getElementById('btn-left').addEventListener('click', moveLeft);
-  document.getElementById('btn-right').addEventListener('click', moveRight);
-  canvas.addEventListener('click', ()=>{ if(gameState!=='running') reset(); });
-
-  // Road markings
-  let roadOffset = 0;
-
-  function drawRoad(){
-    // Road background
-    const roadGrad = ctx.createLinearGradient(0,0,W,0);
-    roadGrad.addColorStop(0,'#0a1628');
-    roadGrad.addColorStop(0.5,'#0d1f35');
-    roadGrad.addColorStop(1,'#0a1628');
-    ctx.fillStyle = roadGrad;
-    ctx.fillRect(0,0,W,H);
-
-    // Road edges glow
-    ctx.strokeStyle='#0072ff'; ctx.lineWidth=3; ctx.shadowColor='#0072ff'; ctx.shadowBlur=10;
-    ctx.beginPath(); ctx.moveTo(20,0); ctx.lineTo(20,H); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(260,0); ctx.lineTo(260,H); ctx.stroke();
-    ctx.shadowBlur=0;
-
-    // Lane dividers
-    ctx.setLineDash([30,20]);
-    ctx.strokeStyle='#1e3a5f'; ctx.lineWidth=2;
-    [80,140,200].forEach(x=>{
-      ctx.beginPath(); ctx.moveTo(x, roadOffset%50-50); ctx.lineTo(x, H); ctx.stroke();
-    });
-    ctx.setLineDash([]);
-
-    // Speed lines (motion blur effect)
-    ctx.strokeStyle='rgba(0,198,255,0.1)'; ctx.lineWidth=1;
-    for(let i=0;i<5;i++){
-      const x = 25 + Math.random()*230;
-      const y = (roadOffset*2 + i*80) % H;
-      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,y+20); ctx.stroke();
-    }
-  }
-
-  function drawCar(x, y, color1, color2, isPlayer){
-    ctx.save();
-    // Car body
-    const grad = ctx.createLinearGradient(x-18,y,x+18,y);
-    grad.addColorStop(0, color1);
-    grad.addColorStop(1, color2);
-    ctx.fillStyle = grad;
-    ctx.shadowColor = isPlayer ? '#00c6ff' : '#ff4444';
-    ctx.shadowBlur = isPlayer ? 15 : 8;
-    // Main body
-    ctx.beginPath();
-    ctx.roundRect(x-16, y-24, 32, 48, 6);
-    ctx.fill();
-    // Roof
-    ctx.fillStyle = isPlayer ? '#0a1628' : '#1a0a0a';
-    ctx.beginPath();
-    ctx.roundRect(x-10, y-18, 20, 22, 4);
-    ctx.fill();
-    // Windshield
-    ctx.fillStyle = isPlayer ? 'rgba(0,198,255,0.4)' : 'rgba(255,100,100,0.3)';
-    ctx.beginPath();
-    ctx.roundRect(x-8, y-16, 16, 10, 2);
-    ctx.fill();
-    // Wheels
-    ctx.fillStyle = '#1e2d40';
-    ctx.shadowBlur = 0;
-    [[x-18,y-14],[x+14,y-14],[x-18,y+10],[x+14,y+10]].forEach(([wx,wy])=>{
-      ctx.beginPath(); ctx.ellipse(wx,wy,5,7,0,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle='#4a9eff'; ctx.beginPath(); ctx.ellipse(wx,wy,2,3,0,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle='#1e2d40';
-    });
-    // Headlights/taillights
-    if(isPlayer){
-      ctx.fillStyle='rgba(255,255,100,0.9)';
-      ctx.beginPath(); ctx.ellipse(x-10,y-24,4,3,0,0,Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(x+10,y-24,4,3,0,0,Math.PI*2); ctx.fill();
-      // EV badge
-      ctx.fillStyle='#00c6ff'; ctx.font='bold 8px Arial'; ctx.textAlign='center';
-      ctx.fillText('EV', x, y+28);
-    } else {
-      ctx.fillStyle='rgba(255,50,50,0.9)';
-      ctx.beginPath(); ctx.ellipse(x-10,y+24,4,3,0,0,Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(x+10,y+24,4,3,0,0,Math.PI*2); ctx.fill();
-    }
-    ctx.restore();
-  }
-
-  const obstacleColors = [
-    ['#ff4444','#cc0000'],['#ff8800','#cc5500'],['#aa00ff','#7700cc'],
-    ['#00aa44','#007733'],['#ffcc00','#cc9900']
-  ];
-
-  function loop(){
-    raf = requestAnimationFrame(loop);
-    roadOffset += speed * 0.5;
-    drawRoad();
-
-    if(gameState==='idle'){
-      ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,H/2-60,W,120);
-      ctx.fillStyle='#00c6ff'; ctx.font='bold 20px Poppins'; ctx.textAlign='center';
-      ctx.fillText('🏎️ EV RACING', W/2, H/2-25);
-      ctx.fillStyle='#8892a4'; ctx.font='13px Poppins';
-      ctx.fillText('Tap or press ← → to start!', W/2, H/2+5);
-      ctx.fillStyle='#4a9eff'; ctx.font='11px Poppins';
-      ctx.fillText('Dodge traffic, earn points!', W/2, H/2+28);
-      return;
-    }
-
-    frameCount++;
-
-    // Level up
-    if(score > 0 && score % 10 === 0 && speed < 10){
-      speed = 3 + Math.floor(score/10) * 0.8;
-      level = Math.floor(score/10) + 1;
-      document.getElementById('race-level').textContent = level;
-    }
-
-    // Spawn obstacles
-    const spawnRate = Math.max(40, 80 - score*2);
-    if(frameCount % spawnRate === 0){
-      const lane = Math.floor(Math.random()*4);
-      const colorPair = obstacleColors[Math.floor(Math.random()*obstacleColors.length)];
-      obstacles.push({x:LANES[lane], y:-60, lane, color1:colorPair[0], color2:colorPair[1]});
-    }
-
-    // Move obstacles
-    obstacles.forEach(o=>o.y+=speed);
-    obstacles = obstacles.filter(o=>{
-      if(o.y > H+60){ score++; document.getElementById('race-score').textContent=score; return false; }
-      return true;
-    });
-
-    // Draw obstacles
-    obstacles.forEach(o=> drawCar(o.x, o.y, o.color1, o.color2, false));
-
-    // Smooth car movement
-    car.x += (car.targetX - car.x) * 0.2;
-
-    // Draw player car
-    drawCar(car.x, car.y, '#0072ff', '#00c6ff', true);
-
-    // Exhaust particles
-    if(frameCount%3===0){
-      ctx.fillStyle='rgba(0,198,255,0.3)';
-      ctx.beginPath();
-      ctx.arc(car.x + (Math.random()-0.5)*10, car.y+28, Math.random()*4+1, 0, Math.PI*2);
-      ctx.fill();
-    }
-
-    // HUD
-    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.fillRect(0,0,W,28);
-    ctx.fillStyle='#00c6ff'; ctx.font='bold 12px Poppins'; ctx.textAlign='left';
-    ctx.fillText(`⚡ Score: ${score}`, 8, 18);
-    ctx.fillStyle='#fbbf24'; ctx.textAlign='right';
-    ctx.fillText(`Lv.${level} 🏆${best}`, W-8, 18);
-
-    // Collision detection
-    const hit = obstacles.some(o=>{
-      return Math.abs(o.x - car.x) < 28 && Math.abs(o.y - car.y) < 44;
-    });
-
-    if(hit){
-      gameState='dead';
-      if(score>best){ best=score; document.getElementById('race-best').textContent=best; }
-      // Explosion effect
-      ctx.fillStyle='rgba(255,100,0,0.6)'; ctx.fillRect(0,0,W,H);
-      ctx.fillStyle='#fff'; ctx.font='bold 22px Poppins'; ctx.textAlign='center';
-      ctx.fillText('💥 CRASH!', W/2, H/2-20);
-      ctx.fillStyle='#fbbf24'; ctx.font='16px Poppins';
-      ctx.fillText(`Score: ${score}`, W/2, H/2+15);
-      ctx.fillStyle='#8892a4'; ctx.font='12px Poppins';
-      ctx.fillText('Tap to restart', W/2, H/2+45);
-      cancelAnimationFrame(raf);
-    }
-  }
-  loop();
-})();
-
-// EV Fun Facts
-const facts = [
-  "⚡ The first electric car was built in 1884 by Thomas Parker!",
-  "🌍 EVs produce zero direct emissions — helping reduce air pollution.",
-  "🔋 A Tesla Model S battery has over 7,000 lithium-ion cells!",
-  "💰 EV running cost is ~₹1-2/km vs ₹6-8/km for petrol in India.",
-  "🇮🇳 Tata Motors is India's #1 EV brand with 80%+ market share.",
-  "⚡ India has 12,000+ public EV charging stations as of 2025!",
-  "🏎️ Formula E cars race at over 280 km/h — 100% electric!",
-  "🌱 EVs produce 50-70% less CO2 over their lifetime vs petrol cars."
-];
-let factIndex = 0;
-function nextFact() {
-  factIndex = (factIndex + 1) % facts.length;
-  document.getElementById('fact-text').textContent = facts[factIndex];
-}
-document.getElementById('fact-text').textContent = facts[0];
-setInterval(nextFact, 8000);
-
-// Countdown Timer
+// Timer & Battery Logic
 {% if booking.end_time %}
 const endTime = new Date("{{ booking.end_time|date:'Y-m-d H:i:s' }}").getTime();
 const totalDuration = {{ booking.duration_seconds }} * 1000;
@@ -341,31 +251,37 @@ const totalDuration = {{ booking.duration_seconds }} * 1000;
 function updateTimer() {
   const now = new Date().getTime();
   const remaining = endTime - now;
+  
   if (remaining <= 0) {
-    document.getElementById('countdown').textContent = '✅ Done!';
+    document.getElementById('countdown').textContent = '✅ DONE';
     document.getElementById('countdown').style.color = '#34d399';
     document.getElementById('battery-fill').style.height = '100%';
-    document.getElementById('battery-pct').textContent = '100%';
-    // Auto redirect to slot page after 3 seconds
+    document.getElementById('battery-pct').innerHTML = '100<span style="font-size:24px;">%</span>';
+    
+    // Auto redirect
     setTimeout(() => {
       window.location.href = "{% url 'slot' sid=booking.station.uname %}";
-    }, 3000);
+    }, 4000);
     return;
   }
+  
   const mins = Math.floor(remaining / 60000);
   const secs = Math.floor((remaining % 60000) / 1000);
   document.getElementById('countdown').textContent = String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
+  
+  // Update battery percentage
   const pct = Math.min(100, Math.round((1 - remaining/totalDuration) * 100));
   document.getElementById('battery-fill').style.height = pct + '%';
-  document.getElementById('battery-pct').textContent = pct + '%';
+  document.getElementById('battery-pct').innerHTML = pct + '<span style="font-size:24px;">%</span>';
 }
+
 updateTimer();
 setInterval(updateTimer, 1000);
 {% else %}
-document.getElementById('countdown').textContent = 'Charging...';
+document.getElementById('countdown').textContent = 'CHARGING...';
 {% endif %}
 </script>
-<script src="/static/js/lang-toggle.js"></script><script src="/static/js/naveen-chat.js"></script>
+
+<script src="/static/js/lang-toggle.js?v=2"></script><script src="/static/js/naveen-chat.js"></script>
 </body>
 </html>
-
