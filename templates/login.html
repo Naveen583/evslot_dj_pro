@@ -64,12 +64,11 @@ function showPosition(position) {
 @keyframes ev-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 </style>
 <script>
-window.addEventListener('load', function() {
-    setTimeout(function() {
-        var s = document.getElementById('ev-splash');
-        if(s) { s.style.opacity = '0'; setTimeout(()=>s.style.display='none', 400); }
-    }, 200); // Super fast 0.2s delay for premium feel
-});
+// Run immediately instead of waiting for window.load which gets blocked by heavy iframes
+setTimeout(function() {
+    var s = document.getElementById('ev-splash');
+    if(s) { s.style.opacity = '0'; setTimeout(()=>s.style.display='none', 400); }
+}, 600);
 </script>
 </div>
 </div>
