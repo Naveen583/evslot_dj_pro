@@ -4,7 +4,11 @@
     // 1. Inject hidden Google Translate element
     const gtContainer = document.createElement('div');
     gtContainer.id = 'google_translate_element';
-    gtContainer.style.display = 'none';
+    // Instead of display: none, move it off-screen so Google Translate still initializes it properly
+    gtContainer.style.position = 'absolute';
+    gtContainer.style.left = '-9999px';
+    gtContainer.style.top = '-9999px';
+    gtContainer.style.visibility = 'hidden';
     document.body.appendChild(gtContainer);
 
     // 2. Load Google Translate Script
@@ -20,10 +24,10 @@
         setTimeout(() => {
             const savedLang = localStorage.getItem('ev-page-lang');
             if (savedLang && savedLang !== 'en') {
-                triggerTranslate(savedLang);
                 if(document.getElementById('custom-lang-select')) {
                     document.getElementById('custom-lang-select').value = savedLang;
                 }
+                triggerTranslate(savedLang);
             }
         }, 1000);
     };
@@ -52,6 +56,12 @@
                 }
             }, 500);
         }
+    }
+
+    // Read cookie for current google translate language
+    function getGoogTransCookie() {
+        const match = document.cookie.match(/(^|;) ?googtrans=([^;]*)(;|$)/);
+        return match ? match[2].split('/')[2] : null;
     }
 
     // 4. Build Custom UI Dropdown
@@ -94,13 +104,7 @@
         { code: 'kn', name: 'ಕನ್ನಡ' }
     ];
 
-    const savedLang = localStorage.getItem('ev-page-lang') || 'en';
-    
-    // Set googtrans cookie on load for persistence
-    if (savedLang !== 'en') {
-        document.cookie = `googtrans=/en/${savedLang}; path=/`;
-        document.cookie = `googtrans=/en/${savedLang}; domain=.${location.hostname}; path=/`;
-    }
+    const savedLang = localStorage.getItem('ev-page-lang') || getGoogTransCookie() || 'en';
 
     languages.forEach(l => {
         const opt = document.createElement('option');
@@ -115,25 +119,41 @@
         const selectedLang = e.target.value;
         localStorage.setItem('ev-page-lang', selectedLang);
         
-        // Set Google Translate cookie directly
-        document.cookie = `googtrans=/en/${selectedLang}; path=/`;
-        document.cookie = `googtrans=/en/${selectedLang}; domain=.${location.hostname}; path=/`;
-        
+        if (selectedLang === 'en') {
+            // Clear all possible variations of the googtrans cookie first
+            document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=." + document.domain + "; path=/;";
+            document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=" + location.hostname + "; path=/;";
+            
+            // Reload to restore original text securely
+            window.location.reload();
+            return;
+        }
+
+        // Instead of reloading, directly tell Google Translate to translate now
         triggerTranslate(selectedLang);
-        
-        // Optional: reload page to force translation if it gets stuck
-        // setTimeout(() => window.location.reload(), 500);
     });
+
+    // 6. Ensure Google Translate initializes if already set in localStorage
+    window.onload = function() {
+        setTimeout(function() {
+            var savedLang = localStorage.getItem('ev-page-lang');
+            if(savedLang && savedLang !== 'en') {
+                triggerTranslate(savedLang);
+            }
+        }, 1500);
+    };
 
     document.body.appendChild(langSelect);
 
-    // Hide the Google Translate banner at the top
+    // Hide the Google Translate banner at the top and tooltips
     const hideBannerStyle = document.createElement('style');
     hideBannerStyle.innerHTML = `
         body { top: 0 !important; }
         .skiptranslate iframe { display: none !important; }
         #goog-gt-tt { display: none !important; }
         .goog-te-banner-frame { display: none !important; }
+        .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; }
     `;
     document.head.appendChild(hideBannerStyle);
 
