@@ -121,7 +121,25 @@
     </script>
   </head>
   <body>
-<div id='ev-splash' style='position:fixed;top:0;left:0;width:100%;height:100%;background:#0a0e1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s,visibility 0.5s;'><p style='font-size:36px;font-weight:800;background:linear-gradient(90deg,#00c6ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:0;'>&#9889; EV CHARGE HUB</p><p style='color:#4a9eff;letter-spacing:4px;font-size:12px;margin:8px 0 0;'>SMART CHARGING</p><div style='width:180px;height:4px;background:#1e2d40;border-radius:4px;margin-top:20px;overflow:hidden;'><div id='ev-bar' style='height:100%;width:0;background:linear-gradient(90deg,#00c6ff,#7b2ff7);border-radius:4px;'></div></div></div><script>setTimeout(function(){var b=document.getElementById('ev-bar');if(b){b.style.transition='width 1.6s ease';b.style.width='100%';}setTimeout(function(){var s=document.getElementById('ev-splash');if(s){s.style.display='none';}},1800);},50);</script>
+
+<div id='ev-splash' style='position:fixed;top:0;left:0;width:100%;height:100%;background:#0f172a;z-index:99999;display:flex;align-items:center;justify-content:center;transition:opacity 0.4s ease, visibility 0.4s ease;'>
+    <div style='position:relative; width:80px; height:80px;'>
+        <div style='position:absolute; top:0; left:0; width:100%; height:100%; border-radius:50%; border:3px solid transparent; border-top-color:#38bdf8; border-right-color:#818cf8; animation: ev-spin 0.8s linear infinite;'></div>
+        <div style='position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:24px;'>⚡</div>
+    </div>
+</div>
+<style>
+@keyframes ev-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
+<script>
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        var s = document.getElementById('ev-splash');
+        if(s) { s.style.opacity = '0'; setTimeout(()=>s.style.display='none', 400); }
+    }, 200); // Super fast 0.2s delay for premium feel
+});
+</script>
+
     
 	  <nav class="navbar navbar-expand-lg navbar-dark ftco_navbar bg-dark ftco-navbar-light" id="ftco-navbar">
 	    <div class="container">
