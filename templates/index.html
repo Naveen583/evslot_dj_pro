@@ -508,7 +508,7 @@ function triggerVipCall() {
     btn.textContent = 'Calling...';
     btn.disabled = true;
     
-    fetch('/charging/api/trigger_call/', {
+    fetch('/api/trigger_call/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
