@@ -872,17 +872,9 @@ def book_slot(request):
                                f"Station: {booking.station.name}\nSlot: {booking.slot}\n"
                                f"Date: {booking.rdate}\nTime: {booking.btime1} - {booking.btime2}\n"
                                f"Vehicle: {booking.carno}")
-                    qr_base64 = ""
-                    if QRCODE_AVAILABLE:
-                        import qrcode as qrc
-                        qr = qrc.QRCode(version=1, box_size=6, border=3)
-                        qr.add_data(qr_data)
-                        qr.make(fit=True)
-                        img = qr.make_image(fill_color="#0072ff", back_color="white")
-                        buf = io.BytesIO()
-                        img.save(buf, format='PNG')
-                        qr_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
-                    qr_img_tag = f'<img src="data:image/png;base64,{qr_base64}" style="width:180px;height:180px;border-radius:12px;margin:16px 0;border:4px solid #0072ff;">' if qr_base64 else ''
+                    import urllib.parse
+                    safe_qr_data = urllib.parse.quote_plus(qr_data)
+                    qr_img_tag = f'<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={safe_qr_data}" style="width:180px;height:180px;border-radius:12px;margin:16px 0;border:4px solid #0072ff;">'
                     html_msg = f"""<html><body style="background:#0a0e1a;font-family:Arial,sans-serif;padding:30px;">
 <div style="max-width:600px;margin:auto;background:#0d1117;border-radius:16px;overflow:hidden;">
   <div style="background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7);height:5px;"></div>
