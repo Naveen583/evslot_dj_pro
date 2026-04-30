@@ -119,30 +119,20 @@
         const selectedLang = e.target.value;
         localStorage.setItem('ev-page-lang', selectedLang);
         
-        if (selectedLang === 'en') {
-            // Clear all possible variations of the googtrans cookie first
-            document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=." + document.domain + "; path=/;";
-            document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=" + location.hostname + "; path=/;";
-            
-            // Reload to restore original text securely
-            window.location.reload();
-            return;
+        // Clear all possible variations of the googtrans cookie first
+        document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=." + document.domain + "; path=/;";
+        document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=" + location.hostname + "; path=/;";
+        
+        if (selectedLang !== 'en') {
+            // Set new cookie for translation
+            document.cookie = "googtrans=/en/" + selectedLang + "; path=/;";
+            document.cookie = "googtrans=/en/" + selectedLang + "; domain=" + location.hostname + "; path=/;";
         }
-
-        // Instead of reloading, directly tell Google Translate to translate now
-        triggerTranslate(selectedLang);
+        
+        // Reload to apply
+        window.location.reload();
     });
-
-    // 6. Ensure Google Translate initializes if already set in localStorage
-    window.onload = function() {
-        setTimeout(function() {
-            var savedLang = localStorage.getItem('ev-page-lang');
-            if(savedLang && savedLang !== 'en') {
-                triggerTranslate(savedLang);
-            }
-        }, 1500);
-    };
 
     document.body.appendChild(langSelect);
 
