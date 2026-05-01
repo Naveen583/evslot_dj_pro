@@ -242,6 +242,14 @@ setTimeout(function() {
                             //         <a href="/payment/${b.id}/">OUT</a><br>
                             //     `;
                             // }
+                        } else {
+                            // Show 'Charging' status to other users
+                            html += `
+                                <div style="margin-top:10px;padding:8px;background:rgba(255, 71, 87, 0.1);border-radius:8px;border:1px solid rgba(255, 71, 87, 0.2);">
+                                    <span style="color:#ff4757;font-weight:bold;font-size:14px;">⚡ Status : Charging</span><br>
+                                    <span style="font-size:11px;color:#8892a4;">In use by another user</span>
+                                </div>
+                            `;
                         }
                     } else {
                         html += `
