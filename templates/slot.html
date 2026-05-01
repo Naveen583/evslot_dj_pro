@@ -159,31 +159,10 @@ setTimeout(function() {
         const slotsContainer = document.getElementById('slots-container');
 
         function startSlotTimers() {
-            const timerElements = slotsContainer.querySelectorAll('[data-slot-end-time]');
+            const timerElements = slotsContainer.querySelectorAll('[data-slot-start-time]');
             timerElements.forEach(span => {
-                const endTime = new Date(span.dataset.slotEndTime).getTime();
-                const bookingId = span.dataset.slotBookingId;
-                
-                function updateTimer() {
-                    const now = Date.now();
-                    const diff = Math.floor((endTime - now) / 1000);
-
-                    if (diff <= 0) {
-                        span.innerText = "Charge Completed";
-                        // Optionally, trigger a fetch to finish_charge API
-                        fetch(`/finish_charge/${bookingId}/`, {
-                            method: "POST",
-                            headers: { "X-CSRFToken": "{{ csrf_token }}" },
-                        });
-                        return; // Stop the timer
-                    }
-
-                    const m = Math.floor(diff / 60);
-                    const s = diff % 60;
-                    span.innerText = String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
-                    setTimeout(updateTimer, 1000);
-                }
-                updateTimer();
+                // We just show it's running
+                span.innerText = "Running... (Wallet active)";
             });
         }
 
@@ -213,10 +192,10 @@ setTimeout(function() {
                             } else if (b.chargest === 2) {
                                 html += `
                                     <p>charging:
-                                        <span id="slot-timer-${b.id}" data-slot-end-time="${b.end_time}" data-slot-booking-id="${b.id}"></span>
+                                        <span id="slot-timer-${b.id}" data-slot-start-time="${b.btime1}">Running...</span>
                                     </p>
                                     <a href="/charging-wait/${b.id}/" style="background:linear-gradient(90deg,#0072ff,#7b2ff7);color:#fff;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;display:inline-block;margin:4px 2px;">🎮 Wait Room</a>
-                                    <a href="/booking-qr/${b.id}/" style="background:linear-gradient(90deg,#00b09b,#28a745);color:#fff;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;display:inline-block;margin:4px 2px;">📱 QR Code</a>
+                                    <a href="/payment/${b.id}/" style="background:linear-gradient(90deg,#ff4757,#ff6b81);color:#fff;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;display:inline-block;margin:4px 2px;" onclick="return confirm('Stop charging and pay from Wallet?');">🛑 Stop & Pay</a>
                                 `;
                             } else if (b.chargest === 3) {
                                 html += `

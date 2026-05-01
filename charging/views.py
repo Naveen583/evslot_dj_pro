@@ -789,8 +789,10 @@ def book_slot(request):
 
         t1 = request.POST['t1']
         t2 = request.POST['t2']
-        t3 = request.POST['t3']
-        t4 = request.POST['t4']
+        
+        # Auto-calculate end time (2 hours later) as we removed it from the form
+        t3 = str(min(23, int(t1) + 2)).zfill(2)
+        t4 = t2
 
         sh = int(t1)
         btime1 = f"{t1}:{t2}"
@@ -1046,31 +1048,20 @@ def select_plan(request):
         messages.error(request, f"⚠️ Slot {booking.slot} is already booked by another user from {next_booking.btime1} to {next_booking.btime2}. Please vacate the slot.")
         return redirect('slot', sid=booking.station.uname)
 
-    if request.method == 'POST':
-        plan = request.POST.get('plan')
-        if not plan:
-            messages.error(request, 'Please select a plan')
-            return render(request, 'select.html', {'sid': sid, 'rid': rid, 'booking': booking})
+    user_obj = EVRegister.objects.get(uname=request.session['user'])
+    if user_obj.amount < 50:
+        messages.error(request, "Insufficient Wallet Balance. Minimum ₹50 required to start charging.")
+        return redirect('slot', sid=booking.station.uname)
 
-        plan_int = int(plan)
-        booking.plan = plan_int
+    # Start charging automatically based on wallet
+    booking.chargest = 1
+    booking.status = 1
+    booking.amount = 0 # Will be calculated at the end
+    booking.save(update_fields=['chargest', 'status', 'amount'])
 
-        # map each plan number to mins and amount
-        if plan_int == 1:
-            booking.amount = 100
-        elif plan_int == 2:
-            booking.amount = 200
-        elif plan_int == 3:
-            booking.amount = 300
-
-        booking.chargest = 1
-        booking.status = 1
-        booking.save(update_fields=['plan', 'amount', 'chargest', 'status'])
-
-        request.session['booking_id'] = booking.id
-        return redirect('slot', sid=sid)
-
-    return render(request, 'select.html', {'sid': sid, 'rid': rid, 'booking': booking})
+    request.session['booking_id'] = booking.id
+    messages.success(request, "Charging initialized. Cost will be deducted from your wallet based on usage (₹5/min).")
+    return redirect('slot', sid=booking.station.uname)
 
 
 def tariff_view(request):
@@ -1125,7 +1116,6 @@ def payment(request, rid=None):
         messages.error(request, "Invalid user credentials. please login")
         return redirect('user_login')
 
-    # 1) Get booking either from URL (OUT after charge) or from session (old flow)
     if rid is not None:
         booking = get_object_or_404(EVBooking, id=rid)
     else:
@@ -1135,7 +1125,6 @@ def payment(request, rid=None):
             return redirect('user_home')
         booking = get_object_or_404(EVBooking, id=booking_id)
 
-    # 2) Optional: ensure only owner can pay
     if hasattr(booking.uname, 'uname'):
         booking_uname = booking.uname.uname
     else:
@@ -1145,108 +1134,60 @@ def payment(request, rid=None):
         messages.error(request, "You cannot pay for this booking.")
         return redirect('slot', sid=booking.station.uname)
 
-    # 3) Optional: ensure charging is completed before payment
-    if booking.chargest != 3:
-        messages.error(request, "Charging not completed yet.")
+    # Calculate charging time if we are stopping it now
+    duration_minutes = 0
+    if booking.chargest == 2:
+        booking.chargest = 3
+        try:
+            start_dt = datetime.strptime(f"{booking.rdate} {booking.btime1}", "%Y-%m-%d %H:%M")
+            start_dt = timezone.make_aware(start_dt, timezone.get_current_timezone())
+            now = timezone.now()
+            duration_minutes = int((now - start_dt).total_seconds() / 60)
+        except Exception:
+            duration_minutes = 30 # fallback
+
+        if duration_minutes <= 0:
+            duration_minutes = 1
+
+        booking.amount = duration_minutes * 5  # ₹5 per minute
+        booking.save(update_fields=['chargest', 'amount'])
+        
+        # Deduct from Wallet automatically
+        user_obj = EVRegister.objects.get(uname=booking_uname)
+        if user_obj.amount >= booking.amount:
+            user_obj.amount -= booking.amount
+            user_obj.save(update_fields=['amount'])
+            
+            booking.payst = 1
+            booking.paymode = "Wallet"
+            booking.save(update_fields=['payst', 'paymode'])
+            messages.success(request, f"Stopped Charging. ₹{booking.amount} deducted from Wallet for {duration_minutes} mins.")
+            return redirect('slot', sid=booking.station.uname)
+        else:
+            messages.warning(request, f"Wallet balance low. Please pay ₹{booking.amount} via Bank.")
+
+    if booking.payst == 1:
+        messages.success(request, f"Payment already completed for Slot {booking.slot}.")
         return redirect('slot', sid=booking.station.uname)
 
-    # 4) Set end time / amount like Flask (optional, if not already done elsewhere)
-    # booking.amount should already be set from select_plan; if you still need min 20:
-    if booking.amount <= 0:
-        booking.amount = 20
-        booking.save(update_fields=['amount'])
-
-    # 5) Handle payment submit
+    # 5) Handle manual payment submit (if wallet was insufficient)
     if request.method == 'POST':
         pay_mode = request.POST.get('pay_mode')
         if not pay_mode:
             messages.error(request, "Please select a payment mode.")
             return render(request, 'payment.html', {'booking': booking})
 
-        # Bank mode → generate OTP and go to verify_otp
         if pay_mode == 'Bank':
             otp = str(randint(100000, 999999))
             booking.paymode = pay_mode
             booking.otp = otp
             booking.save(update_fields=['paymode', 'otp'])
-
-            # --- Send SMS ---
-            try:
-                user = EVRegister.objects.get(uname=request.session['user'])
-                mobile = user.mobile
-
-                # The message must match the pre-approved template associated with the templateid
-                sms_message = f"Dear {user.uname} Emergency Alert Message in the link:Key:{otp} By SMSWAY IOTCLD"
-                # URL-encode the message
-                encoded_message = urllib.parse.quote(sms_message)
-
-                url = (
-                    "http://pay4sms.in/sendsms/"
-                    f"?token=b81edee36bcef4ddbaa6ef535f8db03e&credit=2&sender=IOTCLD"
-                    f"&message={encoded_message}&number={mobile}&templateid=1207162443838625724"
-                )
-
-                headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
-                }
-                r = requests.get(url, timeout=10, headers=headers)
-
-                if r.status_code == 200 and "sent" in r.text.lower(): # Check for "sent" in response text
-                    messages.success(request, "OTP has been sent to your mobile.")
-                else:
-                    messages.error(request, f"Failed to send OTP. SMS gateway returned status {r.status_code}.")
-            except Exception as e:
-
-                messages.error(request, "Failed to send OTP. Please try again.")
-                # We might want to stay on the payment page if OTP sending fails
-                return render(request, 'payment.html', {'booking': booking})
-
             return redirect('verify_otp', rid=booking.id)
-
-        # Other modes → mark paid directly
         else:
             booking.paymode = pay_mode
             booking.payst = 1
             booking.save(update_fields=['paymode', 'payst'])
             messages.success(request, f"Payment successful for Slot.no : {booking.slot}, Paid Amount INR {booking.amount}.")
-            # Send payment confirmation email
-            try:
-                user_obj = EVRegister.objects.get(uname=request.session['user'])
-                def send_pay_email(b, u):
-                    try:
-                        html = f"""<html><body style="background:#0a0e1a;font-family:Arial,sans-serif;padding:30px;">
-<div style="max-width:600px;margin:auto;background:#0d1117;border-radius:16px;overflow:hidden;">
-<div style="background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7);height:5px;"></div>
-<div style="padding:30px;text-align:center;">
-<h1 style="color:#00c6ff;">&#9889; EV CHARGE HUB</h1>
-<h2 style="color:#34d399;">&#10003; Payment Successful!</h2>
-<p style="color:#8892a4;">Hi <strong style="color:#fff;">{u.name}</strong>, your payment is confirmed!</p>
-<div style="background:#131920;border-radius:12px;padding:16px;text-align:left;margin:16px 0;">
-<table style="width:100%;color:#fff;font-size:14px;">
-<tr><td style="color:#8892a4;padding:5px 0;">Booking ID</td><td style="color:#00c6ff;font-weight:700;">#{b.id}</td></tr>
-<tr><td style="color:#8892a4;padding:5px 0;">Station</td><td>{b.station.name}</td></tr>
-<tr><td style="color:#8892a4;padding:5px 0;">Slot</td><td>{b.slot}</td></tr>
-<tr><td style="color:#8892a4;padding:5px 0;">Amount Paid</td><td style="color:#34d399;font-weight:700;">&#8377;{b.amount}</td></tr>
-<tr><td style="color:#8892a4;padding:5px 0;">Payment Mode</td><td>{b.paymode}</td></tr>
-</table></div>
-<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=EV+Booking+{b.id}+Payment+Confirmed+Amount+{b.amount}" style="width:150px;height:150px;border-radius:8px;margin:10px 0;border:3px solid #34d399;">
-<p style="color:#8892a4;font-size:12px;">Thank you for using EV Charge Hub!</p>
-</div>
-<div style="background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7);height:4px;"></div>
-</div></body></html>"""
-                        mail = EmailMultiAlternatives(
-                            subject=f'✅ Payment Confirmed – ₹{b.amount} | EV Charge Hub',
-                            body=f'Payment confirmed! Booking #{b.id}, Amount: ₹{b.amount}',
-                            from_email=settings.DEFAULT_FROM_EMAIL,
-                            to=[u.email],
-                        )
-                        mail.attach_alternative(html, "text/html")
-                        mail.send(fail_silently=True)
-                    except Exception:
-                        pass
-                threading.Thread(target=send_pay_email, args=(booking, user_obj)).start()
-            except Exception:
-                pass
             return redirect('slot', sid=booking.station.uname)
 
     return render(request, 'payment.html', {'booking': booking})
