@@ -1149,22 +1149,53 @@ def payment(request, rid=None):
         if duration_minutes <= 0:
             duration_minutes = 1
 
-        booking.amount = duration_minutes * 5  # ₹5 per minute
+        # Surge pricing check: Peak hours 18:00 to 22:00 (6 PM - 10 PM)
+        current_hour = now.hour
+        if 18 <= current_hour <= 22:
+            rate_per_min = 7
+            surge_msg = " (Peak Hour Rate Applied: ₹7/min)"
+        else:
+            rate_per_min = 5
+            surge_msg = " (Standard Rate: ₹5/min)"
+
+        booking.amount = duration_minutes * rate_per_min
         booking.save(update_fields=['chargest', 'amount'])
         
         # Deduct from Wallet automatically
         user_obj = EVRegister.objects.get(uname=booking_uname)
         if user_obj.amount >= booking.amount:
             user_obj.amount -= booking.amount
-            user_obj.save(update_fields=['amount'])
+            user_obj.green_points += 10 # Eco-Rewards
+            user_obj.save(update_fields=['amount', 'green_points'])
             
             booking.payst = 1
             booking.paymode = "Wallet"
             booking.save(update_fields=['payst', 'paymode'])
-            messages.success(request, f"Stopped Charging. ₹{booking.amount} deducted from Wallet for {duration_minutes} mins.")
-            return redirect('slot', sid=booking.station.uname)
+            
+            # Send Twilio SMS Alert
+            try:
+                from twilio.rest import Client
+                import os
+                account_sid = os.environ.get('TWILIO_SID')
+                auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
+                twilio_number = '+19785862088'
+                client = Client(account_sid, auth_token)
+                
+                mobile_str = str(user_obj.mobile)
+                if len(mobile_str) == 10:
+                    mobile_str = "+91" + mobile_str
+                elif not mobile_str.startswith('+'):
+                    mobile_str = "+" + mobile_str
+                    
+                msg_body = f"EV Charge Hub: Charging Complete! ₹{booking.amount} deducted. You earned 10 Green Points! 🏆"
+                client.messages.create(body=msg_body, from_=twilio_number, to=mobile_str)
+            except Exception as e:
+                pass
+
+            messages.success(request, f"Stopped Charging. ₹{booking.amount} deducted from Wallet for {duration_minutes} mins{surge_msg}. You earned 10 Green Points! 🏆")
+            return redirect('user_home')
         else:
-            messages.warning(request, f"Wallet balance low. Please pay ₹{booking.amount} via Bank.")
+            messages.warning(request, f"Wallet balance low. Please pay ₹{booking.amount} via Bank{surge_msg}.")
 
     if booking.payst == 1:
         messages.success(request, f"Payment already completed for Slot {booking.slot}.")
@@ -1828,8 +1859,14 @@ def trigger_call_api(request):
             client = Client(account_sid, auth_token)
             
             # The TwiML here determines what the person hears when they pick up the call
+            twiml_str = '''<Response>
+                <Gather numDigits="1" action="/charging/api/twilio_keypress/" method="POST">
+                    <Say voice="man">Hi, I am Naveen, your E V slot hub assistant. Press 1 for booking, and 2 to talk to the customer care staff.</Say>
+                </Gather>
+                <Say voice="man">We didn't receive any input. Have a great day!</Say>
+            </Response>'''
             call = client.calls.create(
-                twiml='<Response><Say voice="Polly.Aditi">Hi! I am Naveen from E V Charge Hub. How can I help you book your charging slot today?</Say></Response>',
+                twiml=twiml_str,
                 to=to_number,
                 from_=twilio_number
             )
@@ -1844,13 +1881,12 @@ def twilio_incoming_webhook(request):
     from twilio.twiml.voice_response import VoiceResponse, Gather
     response = VoiceResponse()
     
-    # Use Gather to collect keypress from the user
     gather = Gather(num_digits=1, action='/charging/api/twilio_keypress/', method='POST')
-    gather.say("Hi! I am Naveen from E V Charge Hub. Press 1 to book a charging slot instantly. Press 2 to speak to a customer care representative.", voice="Polly.Aditi")
+    gather.say("Hi, I am Naveen, your E V slot hub assistant. Press 1 for booking, and 2 to talk to the customer care staff.", voice="man")
     
     response.append(gather)
     # Fallback if they don't press anything
-    response.say("We didn't receive any input. Have a great day!", voice="Polly.Aditi")
+    response.say("We didn't receive any input. Have a great day!", voice="man")
     
     from django.http import HttpResponse
     return HttpResponse(str(response), content_type='text/xml')
@@ -1864,12 +1900,100 @@ def twilio_handle_keypress(request):
     digit_pressed = request.POST.get('Digits', '')
     
     if digit_pressed == '1':
-        response.say("Your charging slot has been successfully booked for today. You will receive an S M S confirmation shortly. Thank you!", voice="Polly.Aditi")
+        response.say("Your charging slot has been successfully booked for today. You will receive an S M S confirmation shortly. Thank you!", voice="man")
     elif digit_pressed == '2':
-        response.say("Please wait while I connect you to our customer care team.", voice="Polly.Aditi")
+        response.say("Please wait while I connect you to our customer care team.", voice="man")
         # Future improvement: response.dial('+916379241960')
     else:
-        response.say("Sorry, I did not understand that choice. Goodbye.", voice="Polly.Aditi")
+        response.say("Sorry, I did not understand that choice. Goodbye.", voice="man")
         
     from django.http import HttpResponse
     return HttpResponse(str(response), content_type='text/xml')
+
+
+# ─── Wallet Features ────────────────────────────────────────────────────────
+
+def wallet_view(request):
+    if 'user' not in request.session:
+        messages.error(request, "Please login first.")
+        return redirect('user_login')
+        
+    user = EVRegister.objects.get(uname=request.session['user'])
+    
+    if request.method == 'POST':
+        amount_str = request.POST.get('amount')
+        try:
+            amount = int(amount_str)
+            if amount > 0:
+                request.session['pending_recharge'] = amount
+                return redirect('wallet_upi')
+            else:
+                messages.error(request, "Amount must be greater than 0.")
+        except:
+            messages.error(request, "Invalid amount.")
+            
+    return render(request, 'wallet.html', {'user': user})
+
+def wallet_upi_view(request):
+    if 'user' not in request.session:
+        return redirect('user_login')
+        
+    amount = request.session.get('pending_recharge')
+    if not amount:
+        return redirect('wallet')
+        
+    upi_id = "naveenarul637-3@okicici"
+    upi_name = "EV Charge Hub Wallet"
+    note = f"Wallet Recharge"
+    import urllib.parse
+    upi_string = f"upi://pay?pa={upi_id}&pn={urllib.parse.quote(upi_name)}&am={amount}&cu=INR&tn={urllib.parse.quote(note)}"
+    
+    qr_base64 = ""
+    try:
+        import qrcode
+        import io
+        import base64
+        qr = qrcode.QRCode(version=1, box_size=8, border=4)
+        qr.add_data(upi_string)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="#10b981", back_color="white")
+        buf = io.BytesIO()
+        img.save(buf, format='PNG')
+        qr_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
+    except Exception:
+        pass
+        
+    if request.method == 'POST':
+        user = EVRegister.objects.get(uname=request.session['user'])
+        user.amount += amount
+        user.save(update_fields=['amount'])
+        del request.session['pending_recharge']
+        messages.success(request, f"Successfully added ₹{amount} to your wallet!")
+        return redirect('wallet')
+        
+    return render(request, 'wallet_upi.html', {
+        'amount': amount,
+        'qr_base64': qr_base64,
+        'upi_id': upi_id,
+        'upi_string': upi_string,
+    })
+
+def wallet_redeem_view(request):
+    if 'user' not in request.session:
+        return redirect('user_login')
+        
+    if request.method == 'POST':
+        user = EVRegister.objects.get(uname=request.session['user'])
+        points = user.green_points
+        
+        if points >= 10:
+            cashback = points // 10
+            remainder = points % 10
+            user.amount += cashback
+            user.green_points = remainder
+            user.save(update_fields=['amount', 'green_points'])
+            messages.success(request, f"Redeemed {points - remainder} Green Points for ₹{cashback} Cashback!")
+        else:
+            messages.warning(request, "You need at least 10 Green Points to redeem.")
+            
+    return redirect('wallet')

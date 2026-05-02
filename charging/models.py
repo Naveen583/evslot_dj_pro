@@ -22,6 +22,7 @@ class EVRegister(models.Model):
     passw = models.CharField(max_length=128)
     latitude = models.CharField(max_length=20, blank=True)
     longitude = models.CharField(max_length=20, blank=True)
+    green_points = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'ev_register'

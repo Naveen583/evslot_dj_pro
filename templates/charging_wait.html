@@ -167,32 +167,204 @@
                 <p style="color: #94a3b8; font-size: 16px;">Relax, play, and watch while your EV gets fully charged.</p>
             </div>
 
-            <!-- TOP AD BANNER (Custom Movie Poster) -->
-            <div class="mb-5" style="border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1);">
-                <img src="/static/images/ad_movie.png" style="width:100%; height:auto; display:block;" alt="Upcoming Movie Ad">
+            <!-- AD BANNER CAROUSEL -->
+            <div class="mb-5 position-relative" style="border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1); height: auto; aspect-ratio: 2/1;">
+                <img id="ad-carousel" src="/static/images/idhayam_pesudhe.png" style="width:100%; height:100%; object-fit:cover; display:block; transition: opacity 0.5s ease-in-out;" alt="Sponsor Ads">
+                <script>
+                    const adImages = [
+                        '/static/images/idhayam_pesudhe.png',
+                        '/static/images/ad_movie.png',
+                        '/static/images/ad_college.png'
+                    ];
+                    let currentAdIdx = 0;
+                    const adCarousel = document.getElementById('ad-carousel');
+                    setInterval(() => {
+                        adCarousel.style.opacity = 0;
+                        setTimeout(() => {
+                            currentAdIdx = (currentAdIdx + 1) % adImages.length;
+                            adCarousel.src = adImages[currentAdIdx];
+                            adCarousel.style.opacity = 1;
+                        }, 500); // Wait for fade out
+                    }, 5000);
+                </script>
             </div>
 
-            <!-- PREMIUM GAMES SECTION -->
+            <!-- PREMIUM CAR RACING GAME SECTION -->
             <div class="glass-panel mb-5">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h4 style="font-weight: 700; margin: 0;"><span style="font-size: 24px; margin-right: 10px;">🎮</span> Premium Games</h4>
-                    <span style="background: #3b82f6; color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700;">HIGH QUALITY</span>
+                    <h4 style="font-weight: 700; margin: 0;"><span style="font-size: 24px; margin-right: 10px;">🏎️</span> EV Highway Racer</h4>
+                    <span style="background: #3b82f6; color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700;">Tap/Click Left & Right</span>
                 </div>
                 
-                <div class="row g-4">
-                    <!-- Main Game (Large) -->
-                    <div class="col-12">
-                        <div class="iframe-container" style="padding-top: 56.25%;"> <!-- 16:9 Aspect Ratio -->
-                            <!-- Highly addictive 3D racing game (Smash Karts) -->
-                            <iframe src="https://www.crazygames.com/embed/smash-karts" style="width: 100%; height: 100%;" frameborder="0" allow="gamepad *;"></iframe>
+                <div class="col-12 d-flex justify-content-center">
+                    <div style="position: relative; width: 100%; max-width: 400px; height: 500px; background: #334155; border-radius: 12px; overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);">
+                        <canvas id="carGame" width="400" height="500" style="display: block; width: 100%; height: 100%;"></canvas>
+                        
+                        <div id="gameOverlay" style="position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; z-index:10;">
+                            <h2 style="font-weight:800; color:#38bdf8;">EV HIGHWAY</h2>
+                            <p style="margin-bottom: 20px; color:#94a3b8;">Tap left or right to steer!</p>
+                            <button id="startGameBtn" style="background: linear-gradient(90deg, #10b981, #059669); color: white; border: none; padding: 12px 24px; border-radius: 30px; font-size: 18px; font-weight: bold; cursor: pointer;">START DRIVING</button>
+                            <h3 id="gameOverText" style="display:none; color:#ef4444; margin-top:20px; font-weight:800;">CRASHED!</h3>
+                            <p id="scoreText" style="display:none; font-size:18px;">Score: <span id="finalScore">0</span></p>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- MIDDLE AD BANNER (Custom College Ad) -->
-            <div class="mb-5" style="border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1);">
-                <img src="/static/images/ad_college.png" style="width:100%; height:auto; display:block;" alt="College Admission Ad">
+                
+                <script>
+                    const canvas = document.getElementById('carGame');
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Fixed logical size
+                    const GAME_WIDTH = 400;
+                    const GAME_HEIGHT = 500;
+                    
+                    let laneWidth = GAME_WIDTH / 3;
+                    
+                    // Game State
+                    let state = 'start'; // start, playing, over
+                    let score = 0;
+                    let speed = 5;
+                    let frameCount = 0;
+                    
+                    // Player Car
+                    let player = {
+                        lane: 1, // 0: left, 1: middle, 2: right
+                        y: GAME_HEIGHT - 100,
+                        width: 40,
+                        height: 70,
+                        color: '#38bdf8'
+                    };
+                    
+                    // Enemies
+                    let enemies = [];
+                    
+                    function resetGame() {
+                        score = 0;
+                        speed = 5;
+                        enemies = [];
+                        player.lane = 1;
+                        frameCount = 0;
+                        state = 'playing';
+                        document.getElementById('gameOverlay').style.display = 'none';
+                    }
+                    
+                    function spawnEnemy() {
+                        let lane = Math.floor(Math.random() * 3);
+                        enemies.push({
+                            lane: lane,
+                            y: -80,
+                            width: 40,
+                            height: 70,
+                            color: Math.random() > 0.5 ? '#ef4444' : '#eab308'
+                        });
+                    }
+                    
+                    function update() {
+                        if (state !== 'playing') return;
+                        
+                        frameCount++;
+                        if (frameCount % 60 === 0) {
+                            score += 10;
+                            if (score % 100 === 0) speed += 0.5; // Increase speed
+                        }
+                        
+                        if (frameCount % Math.max(30, 80 - Math.floor(score/20)) === 0) {
+                            spawnEnemy();
+                        }
+                        
+                        for (let i = 0; i < enemies.length; i++) {
+                            enemies[i].y += speed;
+                            
+                            // Collision
+                            if (enemies[i].lane === player.lane && 
+                                enemies[i].y + enemies[i].height > player.y && 
+                                enemies[i].y < player.y + player.height) {
+                                state = 'over';
+                                document.getElementById('gameOverlay').style.display = 'flex';
+                                document.getElementById('startGameBtn').innerText = 'TRY AGAIN';
+                                document.getElementById('gameOverText').style.display = 'block';
+                                document.getElementById('scoreText').style.display = 'block';
+                                document.getElementById('finalScore').innerText = score;
+                            }
+                        }
+                        
+                        // Remove off screen enemies
+                        enemies = enemies.filter(e => e.y < GAME_HEIGHT + 100);
+                    }
+                    
+                    function drawCar(x, y, w, h, color) {
+                        ctx.fillStyle = color;
+                        ctx.fillRect(x - w/2, y, w, h);
+                        ctx.fillStyle = '#1e293b';
+                        ctx.fillRect(x - w/2 + 5, y + 10, w - 10, 20); // Windshield
+                        ctx.fillStyle = '#0f172a';
+                        ctx.fillRect(x - w/2 - 2, y + 10, 4, 15); // Wheel L1
+                        ctx.fillRect(x + w/2 - 2, y + 10, 4, 15); // Wheel R1
+                        ctx.fillRect(x - w/2 - 2, y + h - 25, 4, 15); // Wheel L2
+                        ctx.fillRect(x + w/2 - 2, y + h - 25, 4, 15); // Wheel R2
+                    }
+                    
+                    function draw() {
+                        // Background
+                        ctx.fillStyle = '#475569';
+                        ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+                        
+                        // Road Lines
+                        ctx.fillStyle = '#cbd5e1';
+                        let offset = (frameCount * speed) % 40;
+                        for(let i = -40; i < GAME_HEIGHT; i += 40) {
+                            ctx.fillRect(laneWidth - 2, i + offset, 4, 20);
+                            ctx.fillRect(laneWidth * 2 - 2, i + offset, 4, 20);
+                        }
+                        
+                        // Player
+                        let px = player.lane * laneWidth + laneWidth / 2;
+                        drawCar(px, player.y, player.width, player.height, player.color);
+                        
+                        // Enemies
+                        for (let e of enemies) {
+                            let ex = e.lane * laneWidth + laneWidth / 2;
+                            drawCar(ex, e.y, e.width, e.height, e.color);
+                        }
+                        
+                        // Score HUD
+                        ctx.fillStyle = 'white';
+                        ctx.font = '20px Outfit, sans-serif';
+                        ctx.fillText('Score: ' + score, 10, 30);
+                    }
+                    
+                    function loop() {
+                        update();
+                        draw();
+                        requestAnimationFrame(loop);
+                    }
+                    
+                    // Controls
+                    function moveLeft() { if(player.lane > 0 && state === 'playing') player.lane--; }
+                    function moveRight() { if(player.lane < 2 && state === 'playing') player.lane++; }
+                    
+                    document.addEventListener('keydown', (e) => {
+                        if(e.key === 'ArrowLeft' || e.key === 'a') moveLeft();
+                        if(e.key === 'ArrowRight' || e.key === 'd') moveRight();
+                    });
+                    
+                    // Touch controls
+                    canvas.addEventListener('pointerdown', (e) => {
+                        const rect = canvas.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const w = rect.width;
+                        if (x < w/2) moveLeft();
+                        else moveRight();
+                    });
+                    
+                    document.getElementById('startGameBtn').addEventListener('click', () => {
+                        resetGame();
+                    });
+                    
+                    // Initial draw
+                    draw();
+                    requestAnimationFrame(loop);
+                </script>
             </div>
 
             <!-- TRENDING TRAILERS -->

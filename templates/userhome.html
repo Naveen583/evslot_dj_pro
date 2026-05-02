@@ -60,6 +60,7 @@ setTimeout(function() {
 	        <ul class="navbar-nav ml-auto">
 	          <li class="nav-item active"><a href="{% url 'user_home' %}" class="nav-link">Home</a></li>
 	          <li class="nav-item"><a href="{% url 'user_station_selection' %}" class="nav-link">Station</a></li>
+	          <li class="nav-item"><a href="{% url 'wallet' %}" class="nav-link">Wallet</a></li>
 	          <li class="nav-item"><a href="{% url 'tariff' %}" class="nav-link">Tariff</a></li>
 			      <li class="nav-item"><a href="{% url 'history' %}" class="nav-link">History</a></li>
 			      <li class="nav-item"><a href="{% url 'user_logout' %}" class="nav-link">Logout</a></li>
@@ -127,7 +128,12 @@ setTimeout(function() {
           <div class="col-md-8 block-9 mb-md-5">
 		  
             
-			<h3>User : {{ data.uname }}</h3>
+			<div style="display: flex; justify-content: space-between; align-items: center;">
+				<h3>User : {{ data.uname }}</h3>
+				<div style="background: linear-gradient(90deg, #10b981, #059669); color: white; padding: 10px 20px; border-radius: 30px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.4);">
+					🏆 Eco-Rewards: {{ data.green_points }} Points
+				</div>
+			</div>
                 <table align="center" cellpadding="5" cellspacing="0" class="table table-striped">
                    <tr>
                     <td width="50%" align="left">Name</td>

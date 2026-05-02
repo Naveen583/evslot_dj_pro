@@ -1,0 +1,175 @@
+{% load static %}
+<html>
+<head>
+    <link rel="icon" href="/static/images/ev.jpg" type="image/jpeg">
+    <title>My Wallet - EV Charge Hub</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css?family=Outfit:300,400,600,700,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/open-iconic-bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        body {
+            background: #0f172a;
+            font-family: 'Outfit', sans-serif;
+            color: #f8fafc;
+        }
+        .wallet-card {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        .wallet-card::before {
+            content: '';
+            position: absolute;
+            top: -50px; left: -50px;
+            width: 150px; height: 150px;
+            background: radial-gradient(circle, rgba(56,189,248,0.2) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        .balance-amount {
+            font-size: 64px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+            line-height: 1;
+        }
+        .points-badge {
+            display: inline-block;
+            background: linear-gradient(90deg, #10b981, #059669);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: 700;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+        .form-control-custom {
+            background: #1e293b;
+            border: 2px solid #334155;
+            color: white;
+            border-radius: 12px;
+            padding: 15px 20px;
+            font-size: 20px;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        .form-control-custom:focus {
+            outline: none;
+            border-color: #38bdf8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+        }
+        .btn-recharge {
+            background: linear-gradient(90deg, #38bdf8, #818cf8);
+            border: none;
+            color: white;
+            padding: 16px 30px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            width: 100%;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-recharge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(56, 189, 248, 0.4);
+        }
+        .btn-redeem {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid #10b981;
+            color: #10b981;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 15px;
+            width: 100%;
+        }
+        .btn-redeem:hover {
+            background: #10b981;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="">EV <span>WEB</span></a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item"><a href="{% url 'user_home' %}" class="nav-link">Home</a></li>
+                    <li class="nav-item active"><a href="{% url 'wallet' %}" class="nav-link">Wallet</a></li>
+                    <li class="nav-item"><a href="{% url 'user_station_selection' %}" class="nav-link">Station</a></li>
+                    <li class="nav-item"><a href="{% url 'tariff' %}" class="nav-link">Tariff</a></li>
+                    <li class="nav-item"><a href="{% url 'history' %}" class="nav-link">History</a></li>
+                    <li class="nav-item"><a href="{% url 'user_logout' %}" class="nav-link">Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="padding-top: 80px;">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert" style="border-radius: 12px;">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <div class="wallet-card text-center mb-4">
+                    <p style="color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;">Available Balance</p>
+                    <h1 class="balance-amount">₹{{ user.amount }}</h1>
+                    
+                    <div class="points-badge">
+                        🏆 {{ user.green_points }} Green Points
+                    </div>
+                    
+                    <div style="margin-top: 40px;">
+                        <h5 style="color: #f8fafc; font-weight: 700; text-align: left; margin-bottom: 15px;">Add Money</h5>
+                        <form method="POST" action="{% url 'wallet' %}">
+                            {% csrf_token %}
+                            <div class="d-flex" style="gap: 15px;">
+                                <input type="number" name="amount" class="form-control-custom" placeholder="Enter Amount (₹)" required min="1">
+                                <button type="submit" class="btn-recharge">Recharge</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="wallet-card text-center" style="padding: 30px;">
+                    <h5 style="color: #f8fafc; font-weight: 700;">Redeem Green Points</h5>
+                    <p style="color: #94a3b8; font-size: 14px; margin-bottom: 5px;">Convert points to Wallet Cashback!</p>
+                    <p style="color: #38bdf8; font-size: 14px; font-weight: 600;">10 Points = ₹1</p>
+                    
+                    <form method="POST" action="{% url 'wallet_redeem' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-redeem" {% if user.green_points < 10 %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}>
+                            Redeem Cashback ⚡
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+<script src="{% static 'js/jquery.min.js' %}"></script>
+<script src="{% static 'js/bootstrap.min.js' %}"></script>
+<script src="/static/js/lang-toggle.js"></script><script src="/static/js/naveen-chat.js"></script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+{% load static %}
+<html>
+<head>
+    <link rel="icon" href="/static/images/ev.jpg" type="image/jpeg">
+    <title>UPI Recharge - EV Charge Hub</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css?family=Outfit:300,400,600,700,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <style>
+        body {
+            background: #0f172a;
+            font-family: 'Outfit', sans-serif;
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .qr-card {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            text-align: center;
+            max-width: 450px;
+            width: 100%;
+        }
+        .amount-display {
+            font-size: 48px;
+            font-weight: 800;
+            color: #10b981;
+            margin: 20px 0;
+            text-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+        .qr-image-wrapper {
+            background: white;
+            padding: 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin: 20px 0;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);
+        }
+        .btn-confirm {
+            background: linear-gradient(90deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 16px 30px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            width: 100%;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.4);
+        }
+        .btn-cancel {
+            display: inline-block;
+            color: #94a3b8;
+            margin-top: 20px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .btn-cancel:hover { color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-12 d-flex justify-content-center">
+                <div class="qr-card">
+                    <div style="display:inline-block; padding: 6px 16px; background: rgba(16,185,129,0.1); color: #10b981; border-radius: 20px; font-size: 14px; font-weight: 700;">
+                        WALLET TOP-UP
+                    </div>
+                    
+                    <h1 class="amount-display">₹{{ amount }}</h1>
+                    
+                    <p style="color: #94a3b8; font-size: 16px;">Scan with PhonePe, GPay, or Paytm</p>
+
+                    <div class="qr-image-wrapper">
+                        {% if qr_base64 %}
+                            <img src="data:image/png;base64,{{ qr_base64 }}" alt="UPI QR Code" style="width: 200px; height: 200px;">
+                        {% else %}
+                            <div style="width:200px; height:200px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#64748b; font-weight:600; border-radius:12px;">
+                                QR Error
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <p style="color: #64748b; font-size: 14px; word-break: break-all; margin: 10px 0;">UPI ID: <strong style="color: #e2e8f0;">{{ upi_id }}</strong></p>
+
+                    <form method="POST" action="{% url 'wallet_upi' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-confirm">✅ Confirm Payment</button>
+                    </form>
+                    
+                    <a href="{% url 'wallet' %}" class="btn-cancel">Cancel Transaction</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
