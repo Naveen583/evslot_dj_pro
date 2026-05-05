@@ -14,6 +14,7 @@ from django.utils.timezone import localtime
 import requests
 from django.urls import reverse
 from django.template.loader import render_to_string
+from .models import EVQueue
 
 try:
     import qrcode
@@ -1997,3 +1998,69 @@ def wallet_redeem_view(request):
             messages.warning(request, "You need at least 10 Green Points to redeem.")
             
     return redirect('wallet')
+
+
+def upgrade_prime(request):
+    if 'user' not in request.session:
+        messages.error(request, "Please login first.")
+        return redirect('user_login')
+    
+    user = EVRegister.objects.get(uname=request.session['user'])
+    if request.method == 'POST':
+        # Simulate payment for Prime
+        user.is_prime = True
+        user.green_points += 100 # Bonus
+        user.save(update_fields=['is_prime', 'green_points'])
+        messages.success(request, "🎉 Welcome to EV Prime! You are now a Premium Member.")
+        return redirect('user_home')
+        
+    return render(request, 'upgrade_prime.html', {'user_obj': user})
+
+def join_queue(request, sid):
+    if 'user' not in request.session:
+        return JsonResponse({'status': 'error', 'message': 'Please login first'})
+        
+    user = EVRegister.objects.get(uname=request.session['user'])
+    station = EVStation.objects.filter(uname=sid).first()
+    
+    if not station:
+        return JsonResponse({'status': 'error', 'message': 'Station not found'})
+        
+    # Check if user already in queue
+    if EVQueue.objects.filter(uname=user, station=station, status=0).exists():
+        return JsonResponse({'status': 'error', 'message': 'You are already in the queue for this station!'})
+        
+    # Calculate estimated wait time (15 mins per active charging session at this station)
+    active_bookings = EVBooking.objects.filter(station=station, status=1, chargest=2).count()
+    est_wait = max(15, active_bookings * 15)
+    
+    queue_entry = EVQueue(uname=user, station=station, estimated_wait_mins=est_wait)
+    queue_entry.save()
+    
+    return JsonResponse({
+        'status': 'success', 
+        'message': f'Joined Virtual Queue! Estimated wait: {est_wait} mins.',
+        'wait_time': est_wait
+    })
+
+def trip_planner(request):
+    if 'user' not in request.session:
+        messages.error(request, "Please login to use AI Trip Planner.")
+        return redirect('user_login')
+        
+    weather_data = None
+    if request.method == 'POST':
+        start_city = request.POST.get('start_city')
+        end_city = request.POST.get('end_city')
+        lat = request.POST.get('lat', '11.0168')
+        lon = request.POST.get('lon', '76.9558')
+        
+        # Fetch weather from Open-Meteo
+        try:
+            weather_resp = requests.get(f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true")
+            if weather_resp.status_code == 200:
+                weather_data = weather_resp.json().get('current_weather', {})
+        except Exception:
+            pass
+            
+    return render(request, 'ai_trip_planner.html', {'weather': weather_data})

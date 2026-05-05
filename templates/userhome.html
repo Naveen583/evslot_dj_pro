@@ -128,12 +128,23 @@ setTimeout(function() {
           <div class="col-md-8 block-9 mb-md-5">
 		  
             
-			<div style="display: flex; justify-content: space-between; align-items: center;">
-				<h3>User : {{ data.uname }}</h3>
+			<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+				<h3>User : {{ data.uname }}
+                    {% if data.is_prime %}
+                    <span style="background: linear-gradient(90deg, #ff007f, #7b2ff7); color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px; margin-left: 10px;">👑 EV Prime</span>
+                    {% endif %}
+                </h3>
 				<div style="background: linear-gradient(90deg, #10b981, #059669); color: white; padding: 10px 20px; border-radius: 30px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.4);">
 					🏆 Eco-Rewards: {{ data.green_points }} Points
 				</div>
+                <div style="margin-top: 15px; width: 100%; display: flex; gap: 15px;">
+                    <a href="{% url 'trip_planner' %}" style="background: #0d1117; color: #00c6ff; padding: 10px 20px; border-radius: 10px; text-decoration: none; border: 1px solid #00c6ff;">🗺️ AI Trip Planner</a>
+                    {% if not data.is_prime %}
+                    <a href="{% url 'upgrade_prime' %}" style="background: linear-gradient(90deg, #00c6ff, #0072ff); color: white; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: bold;">Upgrade to Prime ⚡</a>
+                    {% endif %}
+                </div>
 			</div>
+            <br>
                 <table align="center" cellpadding="5" cellspacing="0" class="table table-striped">
                    <tr>
                     <td width="50%" align="left">Name</td>

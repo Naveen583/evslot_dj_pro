@@ -23,6 +23,7 @@ class EVRegister(models.Model):
     latitude = models.CharField(max_length=20, blank=True)
     longitude = models.CharField(max_length=20, blank=True)
     green_points = models.IntegerField(default=0)
+    is_prime = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'ev_register'
@@ -84,4 +85,16 @@ class EVBooking(models.Model):
     
     class Meta:
         db_table = 'ev_booking'
+        managed = True
+
+
+class EVQueue(models.Model):
+    uname = models.ForeignKey(EVRegister, on_delete=models.CASCADE, db_column='uname', to_field='uname')
+    station = models.ForeignKey(EVStation, on_delete=models.CASCADE, db_column='station', to_field='uname')
+    join_time = models.DateTimeField(auto_now_add=True)
+    estimated_wait_mins = models.IntegerField(default=0)
+    status = models.IntegerField(default=0) # 0=waiting, 1=notified/charging, 2=cancelled
+    
+    class Meta:
+        db_table = 'ev_queue'
         managed = True

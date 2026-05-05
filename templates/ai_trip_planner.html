@@ -1,0 +1,43 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block content %}
+<div class="container" style="margin-top: 100px; color: white;">
+    <h2 style="color: #00c6ff; text-align: center;">🗺️ AI-Powered EV Trip Planner</h2>
+    
+    <div style="background: #1e2d40; padding: 30px; border-radius: 15px; max-width: 600px; margin: 30px auto;">
+        <form method="post" action="{% url 'trip_planner' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Starting City</label>
+                <input type="text" name="start_city" class="form-control" style="background:#0d1117; color:white; border:none;" required>
+            </div>
+            <div class="form-group">
+                <label>Destination City</label>
+                <input type="text" name="end_city" class="form-control" style="background:#0d1117; color:white; border:none;" required>
+            </div>
+            <button type="submit" style="background: linear-gradient(90deg, #00c6ff, #0072ff); width: 100%; border: none; padding: 12px; border-radius: 8px; color: white; font-weight: bold;">
+                Plan Trip & Check Weather ⛅
+            </button>
+        </form>
+    </div>
+
+    {% if weather %}
+    <div style="background: #0d1117; padding: 30px; border-radius: 15px; border: 1px solid #34d399; max-width: 600px; margin: auto; text-align: center;">
+        <h3 style="color: #34d399;">Current Weather Conditions</h3>
+        <div style="font-size: 40px; margin: 10px 0;">🌡️ {{ weather.temperature }}°C</div>
+        <p style="color: #8892a4;">Wind Speed: {{ weather.windspeed }} km/h</p>
+        
+        <div style="background: rgba(255, 74, 74, 0.1); border-left: 4px solid #ff4a4a; padding: 15px; text-align: left; margin-top: 20px;">
+            <strong style="color: #ff4a4a;">🤖 AI EV Assistant Tip:</strong><br>
+            {% if weather.temperature < 20 %}
+                Cold weather reduces EV battery range by up to 15%. Make sure to plan an early charging stop along your route!
+            {% elif weather.temperature > 35 %}
+                High temperatures can cause battery throttling. Pre-condition your cabin while plugged in to save range.
+            {% else %}
+                Weather is optimal for EV driving. You should get maximum range on this trip!
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

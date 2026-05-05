@@ -1,0 +1,25 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block content %}
+<div class="container" style="margin-top: 100px; text-align: center; color: white;">
+    <h2 style="color: #00c6ff;">👑 Upgrade to EV Prime</h2>
+    <p>Unlock Premium Features & Discounts!</p>
+    
+    <div style="background: #1e2d40; border: 1px solid #00c6ff; border-radius: 15px; padding: 40px; max-width: 500px; margin: auto; box-shadow: 0 10px 30px rgba(0, 198, 255, 0.2);">
+        <h1 style="color: #34d399;">₹199 / month</h1>
+        <ul style="text-align: left; list-style: none; padding: 0; color: #8892a4; margin-top: 20px;">
+            <li>✅ Zero Convenience Fees</li>
+            <li>✅ Priority Virtual Queue Access</li>
+            <li>✅ Free 100 Green Points on Signup</li>
+            <li>✅ Premium Support</li>
+        </ul>
+        
+        <form method="post" action="{% url 'upgrade_prime' %}">
+            {% csrf_token %}
+            <button type="submit" style="background: linear-gradient(90deg, #00c6ff, #0072ff); color: white; border: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; margin-top: 20px; cursor: pointer;">
+                Pay Now & Upgrade ⚡
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

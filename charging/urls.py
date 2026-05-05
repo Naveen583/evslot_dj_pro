@@ -59,4 +59,7 @@ urlpatterns = [
             path('api/trigger_call/', views.trigger_call_api, name='trigger_call_api'),
             path('api/twilio_incoming/', views.twilio_incoming_webhook, name='twilio_incoming_webhook'),
             path('api/twilio_keypress/', views.twilio_handle_keypress, name='twilio_handle_keypress'),
+            path('upgrade-prime/', views.upgrade_prime, name='upgrade_prime'),
+            path('join-queue/<str:sid>/', views.join_queue, name='join_queue'),
+            path('trip-planner/', views.trip_planner, name='trip_planner'),
         ]
