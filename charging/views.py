@@ -868,54 +868,9 @@ def book_slot(request):
             )
             messages.success(request, f"Slot.no : {new_booking.slot} Booked successfully.")
 
-            # Send booking confirmation email with QR
-            try:
-                def send_booking_email(booking, user_obj):
-                    qr_data = (f"EV Charge Hub Booking\nBooking ID: {booking.id}\n"
-                               f"Station: {booking.station.name}\nSlot: {booking.slot}\n"
-                               f"Date: {booking.rdate}\nTime: {booking.btime1} - {booking.btime2}\n"
-                               f"Vehicle: {booking.carno}")
-                    import urllib.parse
-                    safe_qr_data = urllib.parse.quote_plus(qr_data)
-                    qr_img_tag = f'<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={safe_qr_data}" style="width:180px;height:180px;border-radius:12px;margin:16px 0;border:4px solid #0072ff;">'
-                    html_msg = f"""<html><body style="background:#0a0e1a;font-family:Arial,sans-serif;padding:30px;">
-<div style="max-width:600px;margin:auto;background:#0d1117;border-radius:16px;overflow:hidden;">
-  <div style="background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7);height:5px;"></div>
-  <div style="padding:30px;text-align:center;">
-    <h1 style="color:#00c6ff;margin:0;">&#9889; EV CHARGE HUB</h1>
-    <p style="color:#4a9eff;letter-spacing:3px;font-size:12px;">BOOKING CONFIRMED</p>
-    <h2 style="color:#34d399;">&#10003; Slot Booked Successfully!</h2>
-    <p style="color:#8892a4;">Hi <strong style="color:#fff;">{user_obj.name}</strong>, your slot is confirmed!</p>
-    {qr_img_tag}
-    <div style="background:#131920;border-radius:12px;padding:16px;text-align:left;margin:16px 0;">
-      <table style="width:100%;color:#fff;font-size:14px;">
-        <tr><td style="color:#8892a4;padding:5px 0;">Booking ID</td><td style="color:#00c6ff;font-weight:700;">#{booking.id}</td></tr>
-        <tr><td style="color:#8892a4;padding:5px 0;">Station</td><td>{booking.station.name}</td></tr>
-        <tr><td style="color:#8892a4;padding:5px 0;">Slot No.</td><td>{booking.slot}</td></tr>
-        <tr><td style="color:#8892a4;padding:5px 0;">Date</td><td>{booking.rdate}</td></tr>
-        <tr><td style="color:#8892a4;padding:5px 0;">Time</td><td>{booking.btime1} - {booking.btime2}</td></tr>
-        <tr><td style="color:#8892a4;padding:5px 0;">Vehicle</td><td>{booking.carno}</td></tr>
-      </table>
-    </div>
-    <p style="color:#8892a4;font-size:12px;">Show this QR code at the charging station</p>
-  </div>
-  <div style="background:linear-gradient(90deg,#00c6ff,#0072ff,#7b2ff7);height:4px;"></div>
-</div></body></html>"""
-                    try:
-                        mail = EmailMultiAlternatives(
-                            subject=f'⚡ Booking Confirmed – Slot {booking.slot} | EV Charge Hub',
-                            body=f'Booking confirmed! Slot {booking.slot} at {booking.station.name} on {booking.rdate}',
-                            from_email=settings.DEFAULT_FROM_EMAIL,
-                            to=[user_obj.email],
-                        )
-                        mail.attach_alternative(html_msg, "text/html")
-                        mail.send(fail_silently=True)
-                    except Exception:
-                        pass
-                user_obj = EVRegister.objects.get(uname=uname)
-                threading.Thread(target=send_booking_email, args=(new_booking, user_obj)).start()
-            except Exception:
-                pass
+            # Disabled email sending because of SMTP login issues
+            # The user will see the QR code image directly on the next screen (booking_qr)
+            pass
         else:
             messages.error(request, f"Booking failed. Slot.no : {slot} may be unavailable or invalid time.")
 
